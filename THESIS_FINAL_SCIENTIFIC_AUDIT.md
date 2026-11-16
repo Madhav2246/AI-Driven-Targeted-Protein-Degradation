@@ -118,7 +118,7 @@ To rigorously benchmark the proposed Dual-Anchor Conditional VAE against standar
 | **PAINS / Alert Clear Count / Rate** | 50 / 100.0% | 50 / 100.0% | 50 / 100.0% |
 | **Mean Synthesizability (SAScore)** | 2.95 | 2.92 | **2.82** (Most accessible) |
 | **Mean Drug-Likeness (QED)** | 0.078 | 0.055 | 0.058 |
-| **Mean Cooperativity ($\alpha$)** | 0.276 | 0.265 | **0.288** |
+| **Mean Cooperativity ($\alpha_{\text{est}}$)** | 0.246 | 0.236 | **0.269** |
 | **Productive Leads Count / Rate** ($\alpha \ge 1.0$, bRo5 pass) | 6 / 12.0% | 4 / 8.0% | 5 / 10.0% |
 
 #### Scientific Findings from Ablation:
@@ -135,19 +135,19 @@ To determine the optimal spatial separation between the JQ1-Acid diazepine exit 
 #### Linker Length Scan Table ($N_{\text{conf}} = 8$ per length, Target Span = 14.2 Å)
 *Data extracted from `results/final_validated/linker_length_scan.csv`:*
 
-| Linker Span (atoms) | Min-Energy Span (Å) | Mean Conformer Span (Å) | Conformer Range [Min, Max] (Å) | Target Mismatch (Å) | Buried SASA (Å$^2$) | Clash Penalty (kcal/mol) | Clashes | Cooperativity ($\alpha$) | Apparent $K_d$ (nM) | Structural Status |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **6** | 6.71 | 6.10 | [5.44, 6.87] | 7.49 | 80.0 | 15.22 | 8 | 0.0000 | $>10,000$ | Severe Steric Collision |
-| **8** | 7.49 | 8.49 | [7.49, 9.15] | 6.71 | 134.3 | 13.27 | 7 | 0.0000 | $>10,000$ | Severe Steric Collision |
-| **10** | 10.98 | 10.15 | [8.71, 10.98] | 3.22 | 378.6 | 4.55 | 2 | 0.0002 | $250,000$ | Transition Boundary |
-| **12** | 8.09 | 10.02 | [8.09, 11.74] | 6.11 | 176.3 | 11.77 | 6 | 0.0000 | $>10,000$ | Folded / Steric Clash |
-| **13** | 9.32 | 10.08 | [8.22, 11.59] | 4.88 | 262.4 | 8.70 | 5 | 0.0000 | $>10,000$ | Folded / Steric Clash |
-| **14** | 12.45 | 11.61 | [9.99, 12.97] | 1.75 | 498.8 | 0.38 | 0 | **1.0177** | **49.13** | **Optimal Design Window** |
-| **15** | 8.64 | 12.21 | [8.64, 14.96] | 5.56 | 214.8 | 10.40 | 6 | 0.0000 | $>10,000$ | Folded Conformer Collision |
-| **16** | 12.15 | 12.90 | [11.42, 13.83] | 2.05 | 488.3 | 0.40 | 0 | **0.8539** | **58.55** | **Permissive Window** |
-| **18** | 12.53 | 11.81 | [9.94, 12.53] | 1.67 | 501.6 | 0.37 | 0 | **1.0749** | **46.52** | **Optimal Design Window** |
-| **20** | 16.01 | 16.29 | [13.91, 18.70] | 1.81 | 410.0 | 0.75 | 0 | 0.1643 | 304.32 | High Conformational Entropy |
-| **22** | 14.82 | 15.45 | [13.58, 17.49] | 0.62 | 410.0 | 0.75 | 0 | 0.1643 | 304.32 | High Conformational Entropy |
+| Linker Span (atoms) | Min-Energy Span (Å) | Mean Conformer Span (Å) | Conformer Range [Min, Max] (Å) | Target Mismatch (Å) | Buried SASA (Å$^2$) | Clash Penalty (kcal/mol) | Clashes | Strain (kcal/mol) | Cooperativity ($\alpha_{\text{est}}$) | Apparent $K_d$ (nM) | Structural Status |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **6** | 6.71 | 6.10 | [5.44, 6.87] | 7.49 | 80.0 | 15.22 | 8 | 13.44 | 0.0000 | $>10,000$ (Severe Clash) | Severe Steric Collision |
+| **8** | 7.49 | 8.49 | [7.49, 9.15] | 6.71 | 134.3 | 13.27 | 7 | 3.96 | 0.0000 | $>10,000$ (Severe Clash) | Severe Steric Collision |
+| **10** | 10.98 | 10.15 | [8.71, 10.98] | 3.22 | 378.6 | 4.55 | 2 | 0.52 | 0.0001 | $500,000$ | Transition Boundary |
+| **12** | 8.09 | 10.02 | [8.09, 11.74] | 6.11 | 176.3 | 11.77 | 6 | 2.09 | 0.0000 | $>10,000$ (Severe Clash) | Folded / Steric Clash |
+| **13** | 9.32 | 10.08 | [8.22, 11.59] | 4.88 | 262.4 | 8.70 | 5 | 2.29 | 0.0000 | $>10,000$ (Severe Clash) | Folded / Steric Clash |
+| **14** | 12.45 | 11.61 | [9.99, 12.97] | 1.75 | 498.8 | 0.38 | 0 | 0.00 | **1.0177** | **49.13** | **Optimal Design Window** |
+| **15** | 8.64 | 12.21 | [8.64, 14.96] | 5.56 | 214.8 | 10.40 | 6 | 0.82 | 0.0000 | $>10,000$ (Severe Clash) | Folded Conformer Collision |
+| **16** | 12.15 | 12.90 | [11.42, 13.83] | 2.05 | 488.3 | 0.40 | 0 | 0.14 | **0.8049** | **62.12** | **Permissive Window** |
+| **18** | 12.53 | 11.81 | [9.94, 12.53] | 1.67 | 501.6 | 0.37 | 0 | 0.00 | **1.0749** | **46.52** | **Optimal Design Window** |
+| **20** | 16.01 | 16.29 | [13.91, 18.70] | 1.81 | 410.0 | 0.75 | 0 | 0.00 | 0.1643 | 304.32 | High Conformational Entropy |
+| **22** | 14.82 | 15.45 | [13.58, 17.49] | 0.62 | 410.0 | 0.75 | 0 | 0.00 | 0.1643 | 304.32 | High Conformational Entropy |
 
 #### Biophysical Trajectory Insights:
 - **Severe Short-Linker Clashes (<12 atoms):** Linkers of 6–10 atoms are physically incapable of bridging the $14.2\text{ \AA}$ gap without forcing the BRD4 BD1 domain into steric contact with the CRBN tri-tryptophan pocket. The resulting steric clashes (2 to 8 severe van der Waals overlaps) impart energetic penalties of $+4.55\text{ to }+15.22\text{ kcal/mol}$, driving $\alpha \to 0.0000$.
