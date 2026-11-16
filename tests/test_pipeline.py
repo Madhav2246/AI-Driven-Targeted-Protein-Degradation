@@ -207,6 +207,11 @@ def test_exact_lead_descriptor_consistency():
 
     assert len(candidates) >= 5, f"Expected at least 5 prioritized leads, found {len(candidates)}"
 
+    candidate_ids = [r["candidate_id"] for r in candidates]
+    assert len(candidate_ids) == len(set(candidate_ids)), f"Duplicate candidate IDs found: {candidate_ids}"
+    smiles_set = [r["smiles"] for r in candidates]
+    assert len(smiles_set) == len(set(smiles_set)), f"Duplicate SMILES found in candidate CSV"
+
     for row in candidates:
         cid = row["candidate_id"]
         smi = row["smiles"]
@@ -221,6 +226,7 @@ def test_exact_lead_descriptor_consistency():
         assert recalculated["mw"] == pytest.approx(float(row["mw"]), abs=0.1), f"MW mismatch on {cid}"
         assert recalculated["logp"] == pytest.approx(float(row["logp"]), abs=0.05), f"LogP mismatch on {cid}"
         assert recalculated["tpsa"] == pytest.approx(float(row["tpsa"]), abs=0.1), f"TPSA mismatch on {cid}"
+        assert recalculated["rot_bonds"] == int(row["rot_bonds"]), f"RotBonds mismatch on {cid}"
         assert recalculated["sascore"] == pytest.approx(float(row["sascore"]), abs=0.05), f"SAScore mismatch on {cid}"
         assert recalculated["qed"] == pytest.approx(float(row["qed"]), abs=0.01), f"QED mismatch on {cid}"
 
@@ -234,23 +240,30 @@ def test_exact_lead_descriptor_consistency():
     if not os.path.exists(sdf_path):
         sdf_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_structures.sdf")
 
-    if os.path.exists(sdf_path):
-        suppl = Chem.SDMolSupplier(sdf_path)
-        assert len(suppl) >= 5, f"Expected at least 5 SDF structures, found {len(suppl)}"
-        for m in suppl:
-            assert m is not None, "Encountered None molecule in SDF"
-            assert m.GetNumConformers() >= 1, "SDF molecule lacks 3D conformer"
-            conf = m.GetConformer(0)
-            assert conf.Is3D(), "Conformer is not flagged as 3D"
-            pos = conf.GetPositions()
-            assert not np.all(pos == 0.0), "Conformer atom positions are all zero"
+    assert os.path.exists(sdf_path), f"SDF structure file not found: {sdf_path}"
+    suppl = Chem.SDMolSupplier(sdf_path)
+    sdf_mols = [m for m in suppl if m is not None]
+    assert len(sdf_mols) == len(candidates), f"SDF count ({len(sdf_mols)}) != CSV lead count ({len(candidates)})"
 
-            # Check constitutional isomorphism against candidate SMILES
-            smi_prop = m.GetProp("SMILES")
-            m_no_h = Chem.RemoveHs(m)
-            s_sdf = Chem.MolToSmiles(m_no_h, isomericSmiles=False, canonical=True)
-            s_ref = Chem.MolToSmiles(Chem.MolFromSmiles(smi_prop), isomericSmiles=False, canonical=True)
-            assert s_sdf == s_ref, f"SDF structure constitutional mismatch with SMILES property on {m.GetProp('_Name')}"
+    sdf_names = [m.GetProp("_Name") for m in sdf_mols]
+    assert set(candidate_ids) == set(sdf_names), "Candidate IDs in SDF do not match CSV"
+
+    csv_smiles_map = {r["candidate_id"]: r["smiles"] for r in candidates}
+    for m in sdf_mols:
+        cid = m.GetProp("_Name")
+        assert m.GetNumConformers() >= 1, f"SDF molecule {cid} lacks 3D conformer"
+        conf = m.GetConformer(0)
+        assert conf.Is3D(), f"Conformer {cid} is not flagged as 3D"
+        pos = conf.GetPositions()
+        assert not np.all(pos == 0.0), f"Conformer {cid} atom positions are all zero"
+        assert np.all(np.isfinite(pos)), f"Conformer {cid} contains NaN/infinite coordinates"
+
+        # Check constitutional isomorphism against candidate SMILES
+        smi_prop = m.GetProp("SMILES")
+        m_no_h = Chem.RemoveHs(m)
+        s_sdf = Chem.MolToSmiles(m_no_h, isomericSmiles=False, canonical=True)
+        s_ref = Chem.MolToSmiles(Chem.MolFromSmiles(csv_smiles_map[cid]), isomericSmiles=False, canonical=True)
+        assert s_sdf == s_ref, f"SDF structure constitutional mismatch on {cid}"
 
 
 def test_unclipped_cooperativity_and_apparent_kd():

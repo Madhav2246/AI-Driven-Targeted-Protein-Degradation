@@ -128,15 +128,16 @@ def run_experiment_a_ablation(
     logger.info(f"Executing Experiment A: Generative Model Architecture Ablation (N={sample_size} per model)...")
 
     # Load canonical representations of training linkers for rigorous novelty check
-    train_csv = os.path.join(PROJECT_ROOT, "data", "train_linkers.csv")
     known_canonical_linkers = set()
-    if os.path.exists(train_csv):
-        with open(train_csv, "r", encoding="utf-8") as f:
-            for row in csv.DictReader(f):
-                smi = row.get("linker_smiles", "").strip()
-                mol = Chem.MolFromSmiles(smi)
-                if mol:
-                    known_canonical_linkers.add(Chem.MolToSmiles(mol, canonical=True))
+    for lk_file in ["train_linkers.csv", "cvae_training_linkers.csv"]:
+        p = os.path.join(PROJECT_ROOT, "data", lk_file)
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    smi = row.get("linker_smiles", "").strip()
+                    mol = Chem.MolFromSmiles(smi)
+                    if mol:
+                        known_canonical_linkers.add(Chem.MolToSmiles(mol, canonical=True))
 
     warhead_smi = AML_TARGET_CONFIG["warhead_smiles"]
     e3_smi = AML_TARGET_CONFIG["e3_recruiter_smiles"]
@@ -208,14 +209,18 @@ def run_experiment_a_ablation(
             if protac_dict is not None:
                 valid_count += 1
                 smi = protac_dict["full_smiles"]
-                unique_smiles.add(smi)
+                mol_full = Chem.MolFromSmiles(smi)
+                if mol_full:
+                    unique_smiles.add(Chem.MolToSmiles(mol_full, canonical=True))
+                else:
+                    unique_smiles.add(smi)
 
-                # Canonical novelty check
-                frag = protac_dict["linker_fragment"].replace("7", "1")
+                # Canonical novelty check against known training set linkers
+                frag = protac_dict["linker_fragment"]
                 test_frag_smi = f"N{frag}" if not frag.startswith("N") else frag
                 mol_frag = Chem.MolFromSmiles(test_frag_smi)
                 if mol_frag:
-                    canon_frag = Chem.MolToSmiles(mol_frag, canonical=True)
+                    canon_frag = Chem.MolToSmiles(mol_frag, isomericSmiles=False, canonical=True)
                     if canon_frag not in known_canonical_linkers:
                         novel_count += 1
                 else:
@@ -326,17 +331,34 @@ def run_experiment_b_length_scan(output_csv: str = "experiments/linker_length_sc
         if mol is None:
             continue
 
-        mol_3d, energies = dock_modeler.generate_3d_conformers(mol, num_conformers=8, max_iters=250)
-        fallback = False
+        mol_3d, energies, is_fallback = dock_modeler.generate_3d_conformers(mol, num_conformers=8, max_iters=250)
+        target_span = dock_modeler.pocket_distance_optimal  # 14.2 Angstroms
+
         if mol_3d is not None and energies:
-            # Unbiased lowest-energy conformer represents the baseline relaxed state
+            span_results = [dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=cid) for cid in range(len(energies))]
+            all_spans = [s[0] for s in span_results]
+            is_span_fallback = any(s[1] for s in span_results)
+            fallback = is_fallback or is_span_fallback
+
             min_cid = energies.index(0.0) if 0.0 in energies else 0
-            min_energy_span = dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=min_cid)
-            all_spans = [dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=cid) for cid in range(len(energies))]
+            min_energy_span = all_spans[min_cid]
             mean_span = round(float(np.mean(all_spans)), 2)
             min_span = round(float(np.min(all_spans)), 2)
             max_span = round(float(np.max(all_spans)), 2)
             conf_count = len(energies)
+
+            # Calculate MMFF94s conformational strain required to span the 14.2 A pocket
+            if abs(min_energy_span - target_span) <= 2.0:
+                conformer_strain = 0.0
+            else:
+                bridging_indices = [i for i, s in enumerate(all_spans) if abs(s - target_span) <= 2.0]
+                if bridging_indices:
+                    conformer_strain = round(float(min(energies[i] for i in bridging_indices)), 2)
+                else:
+                    closest_idx = int(np.argmin([abs(s - target_span) for s in all_spans]))
+                    residual = abs(all_spans[closest_idx] - target_span) - 2.0
+                    harmonic = round(0.35 * (residual ** 2), 2)
+                    conformer_strain = round(energies[closest_idx] + harmonic, 2)
         else:
             min_energy_span = round(6.5 + (l_span * 0.58), 2)
             mean_span = min_energy_span
@@ -344,8 +366,8 @@ def run_experiment_b_length_scan(output_csv: str = "experiments/linker_length_sc
             max_span = min_energy_span
             conf_count = 0
             fallback = True
+            conformer_strain = None
 
-        target_span = dock_modeler.pocket_distance_optimal  # 14.2 Angstroms
         pocket_mismatch = round(abs(min_energy_span - target_span), 2)
 
         delta_sasa, clash_penalty, clash_count = dock_modeler.evaluate_steric_and_interface(
@@ -353,8 +375,14 @@ def run_experiment_b_length_scan(output_csv: str = "experiments/linker_length_sc
         )
 
         thermo = dock_modeler.compute_cooperativity_and_affinity(
-            strain_energy=0.0, delta_sasa=delta_sasa, clash_penalty=clash_penalty
+            strain_energy=conformer_strain, delta_sasa=delta_sasa, clash_penalty=clash_penalty
         )
+
+        # Handle apparent Kd display safely
+        if thermo["cooperativity_alpha"] >= 1e-4:
+            apparent_kd_val = thermo["apparent_kd_nm"]
+        else:
+            apparent_kd_val = ">10,000 (Undefined / Severe Clash)"
 
         # Classification based on biophysical landscape
         if clash_penalty >= 5.0 or l_span < 10:
@@ -382,7 +410,8 @@ def run_experiment_b_length_scan(output_csv: str = "experiments/linker_length_sc
             "heuristic_clash_count": clash_count,
             "estimated_cooperativity_alpha": thermo["cooperativity_alpha"],
             "estimated_deltaG_ternary_kcal": thermo["deltaG_ternary_kcal"],
-            "estimated_apparent_kd_nm": thermo["apparent_kd_nm"],
+            "estimated_apparent_kd_nm": apparent_kd_val,
+            "conformer_strain_kcal": conformer_strain if conformer_strain is not None else 0.0,
             "conformer_generation_fallback": fallback,
             "biological_feasibility": feasibility
         })

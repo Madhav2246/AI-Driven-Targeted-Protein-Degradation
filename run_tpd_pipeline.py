@@ -250,9 +250,12 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
     export_fields = [
         "candidate_id", "integrated_rank_score", "scaffold_type", "linker_length_atoms",
         "mw", "logp", "tpsa", "rot_bonds", "hbd", "hba", "sascore", "qed",
-        "cooperativity_alpha", "cooperativity_status", "deltaG_ternary_kcal",
-        "apparent_kd_nm", "inter_protein_sasa_A2", "steric_clash_penalty_kcal",
-        "pains_flag", "alert_flag", "passed_all_filters", "linker_fragment", "smiles"
+        "cooperativity_alpha", "heuristic_cooperativity_alpha", "cooperativity_status",
+        "deltaG_ternary_kcal", "heuristic_deltaG_ternary_kcal", "apparent_kd_nm", "apparent_kd_display",
+        "inter_protein_sasa_A2", "heuristic_buried_sasa_A2", "steric_clash_penalty_kcal",
+        "heuristic_clash_penalty_kcal", "strain_energy_kcal", "conformer_strain_energy_kcal",
+        "pains_flag", "alert_flag", "passed_all_filters", "conformer_generation_fallback",
+        "is_heuristic_score", "linker_fragment", "smiles"
     ]
 
     thesis_dir = os.path.join(PROJECT_ROOT, "results", "thesis_defense")
@@ -330,8 +333,13 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
 
     n_sampled = num_candidates_to_generate
     n_valid = total_valid
-    n_bro5 = sum(1 for c in ternary_evaluated if c.get("passed_all_filters", False))
-    n_pains = sum(1 for c in ternary_evaluated if not c.get("pains_flag", True))
+    n_bro5 = sum(1 for c in ternary_evaluated if c.get("bro5_compliance", {}).get("is_bro5_compliant", False))
+    n_pains_cleared = sum(1 for c in ternary_evaluated if not c.get("pains_flag", True))
+    n_alert_cleared = sum(1 for c in ternary_evaluated if not c.get("alert_flag", True))
+    n_sascore_eligible = sum(1 for c in ternary_evaluated if c.get("sascore", 10.0) <= 4.5)
+    n_passed_all = sum(1 for c in ternary_evaluated if c.get("passed_all_filters", False))
+    n_positive_coop = sum(1 for c in ternary_evaluated if c.get("cooperativity_alpha", 0.0) >= 1.0)
+    n_productive = len(productive_leads)
     n_leads = len(top_candidates)
 
     exec_metrics = {
@@ -340,19 +348,27 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
         "chemical_validity_pct": round((n_valid / max(1, n_sampled)) * 100.0, 1),
         "bro5_compliant_count": n_bro5,
         "bro5_compliance_pct": round((n_bro5 / max(1, n_valid)) * 100.0, 1),
-        "pains_cleared_count": n_pains,
-        "pains_cleared_pct": round((n_pains / max(1, n_valid)) * 100.0, 1),
-        "productive_leads_count": len(productive_leads),
-        "productive_leads_pct": prod_fraction_pct,
+        "pains_cleared_count": n_pains_cleared,
+        "pains_cleared_pct": round((n_pains_cleared / max(1, n_valid)) * 100.0, 1),
+        "structural_alerts_cleared_count": n_alert_cleared,
+        "structural_alerts_cleared_pct": round((n_alert_cleared / max(1, n_valid)) * 100.0, 1),
+        "sascore_eligible_count": n_sascore_eligible,
+        "sascore_eligible_pct": round((n_sascore_eligible / max(1, n_valid)) * 100.0, 1),
+        "all_property_filters_passed_count": n_passed_all,
+        "all_property_filters_passed_pct": round((n_passed_all / max(1, n_valid)) * 100.0, 1),
+        "positive_cooperativity_count": n_positive_coop,
+        "positive_cooperativity_pct": round((n_positive_coop / max(1, n_valid)) * 100.0, 1),
+        "productive_leads_count": n_productive,
+        "productive_leads_pct": round((n_productive / max(1, n_valid)) * 100.0, 1),
         "top_leads_count": n_leads,
         "funnel_stages": [
             f"Sampled\n(N={n_sampled})",
             f"RDKit Valid\n(N={n_valid})",
             f"bRo5 Compliant\n(N={n_bro5})",
-            f"PAINS-Cleared\n(N={n_pains})",
+            f"PAINS-Cleared\n(N={n_pains_cleared})",
             f"Prioritized Leads\n(N={n_leads})"
         ],
-        "funnel_counts": [n_sampled, n_valid, n_bro5, n_pains, n_leads],
+        "funnel_counts": [n_sampled, n_valid, n_bro5, n_pains_cleared, n_leads],
         "scaffold_distribution": scaffold_distribution
     }
 

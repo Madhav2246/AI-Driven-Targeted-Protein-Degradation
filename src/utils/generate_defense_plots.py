@@ -306,7 +306,8 @@ def plot_pipeline_summary():
         scaffolds = ["Alkynyl\n(40%)", "Alkyl\n(30%)", "PEG\n(20%)", "Other\n(10%)"]
         shares = [16, 12, 8, 4]
 
-    colors = ["#3498db", "#2980b9", "#27ae60", "#16a085", "#e74c3c"]
+    base_colors = ["#3498db", "#2980b9", "#27ae60", "#16a085", "#e74c3c", "#9b59b6", "#f39c12"]
+    colors = base_colors[:len(funnel_stages)]
     bars = ax1.barh(funnel_stages[::-1], counts[::-1], color=colors[::-1], edgecolor="black", height=0.55)
     ax1.set_title("A. Computational Lead Optimization Funnel", fontweight="bold")
     ax1.set_xlabel("Number of Compounds")
