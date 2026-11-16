@@ -1,0 +1,7 @@
+{
+  "framework": "PyTorch 2.15.0 + RDKit 2026.09.1",
+  "forcefield": "ETKDGv3 + MMFF94s",
+  "scoring_methodology": "Distance-Geometry Analytical Biophysical Scoring (Calibrated to PDB 6BOY)",
+  "seed": 42,
+  "date_executed": "November 2026"
+}

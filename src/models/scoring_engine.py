@@ -107,8 +107,11 @@ class ProtacPropertyCalculator:
 
     def compute_all_metrics(self, smiles: str) -> Optional[Dict[str, Any]]:
         """Full multi-objective profiling of a PROTAC compound."""
+        if not smiles or not smiles.strip():
+            return None
+
         mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
+        if mol is None or mol.GetNumHeavyAtoms() == 0:
             return None
 
         # Standard RDKit Descriptors

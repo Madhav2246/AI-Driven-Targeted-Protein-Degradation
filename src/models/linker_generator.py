@@ -14,6 +14,7 @@ Implements:
 import os
 import math
 import random
+import logging
 from typing import List, Dict, Tuple, Optional, Any
 import numpy as np
 
@@ -28,6 +29,8 @@ try:
     HAS_FP_GEN = True
 except ImportError:
     HAS_FP_GEN = False
+
+logger = logging.getLogger("LinkerGenerator")
 
 
 # Linker vocabulary of modular chemical building blocks for TPD heterobifunctional linkers
@@ -255,14 +258,70 @@ class ProtacChemicalAssembler:
         """Format token sequence into synthetically viable chemical bridge chains with independent ring numbering."""
         raw_body = "".join(tokens)
         # Adapt heterocyclic ring numbers to prevent clash with JQ1 (rings 1,2,3) and Pom (rings 4,5,6)
-        clean_body = raw_body.replace("c1cn(nn1)", "c7cn(nn7)").replace("N1CCNCC1", "N7CCNCC7").replace("c1ccc(cc1)", "c7ccc(cc7)")
-        cand1 = f"CC{clean_body}CC(=O)N"
-        cand2 = f"C{clean_body}C(=O)N"
-        cand3 = f"CCOCC{clean_body}CCOCC(=O)N"
-        cand4 = f"CC#CC{clean_body}CC(=O)N"
-        cand5 = f"CC7CCN(CC7){clean_body}CC(=O)N"
-        cand6 = f"CCc7cn(nn7){clean_body}COCCC(=O)N"
-        return [cand6, cand1, cand3, cand4, cand5, cand2]
+        clean_body = (
+            raw_body.replace("c1cn(nn1)", "c7cn(nn7)")
+            .replace("N1CCNCC1", "N7CCNCC7")
+            .replace("C1CCN(CC1)", "C7CCN(CC7)")
+            .replace("c1ccc(cc1)", "c7ccc(cc7)")
+            .replace("c1ccncc1", "c7ccncc7")
+            .replace("C1COCCN1", "C7COCCN7")
+        )
+        
+        has_triazole = "c7cn(nn7)" in clean_body
+        has_piperazine = "N7CCNCC7" in clean_body or "C7CCN(CC7)" in clean_body
+        has_alkyne = "#" in clean_body
+        has_peg = "OCC" in clean_body or "CO" in clean_body
+        
+        candidates = []
+        if has_triazole:
+            candidates.extend([
+                f"CCc7cn(nn7){clean_body}COCCC(=O)N",
+                f"CC{clean_body}CC(=O)N",
+                f"C{clean_body}C(=O)N",
+            ])
+        elif has_piperazine:
+            candidates.extend([
+                f"CC{clean_body}CC(=O)N",
+                f"C{clean_body}C(=O)N",
+                f"CCOCC{clean_body}CC(=O)N",
+            ])
+        elif has_alkyne:
+            candidates.extend([
+                f"CC{clean_body}CC(=O)N",
+                f"CC#CC{clean_body}CC(=O)N",
+                f"C{clean_body}C(=O)N",
+            ])
+        elif has_peg:
+            candidates.extend([
+                f"CCOCC{clean_body}CCOCC(=O)N",
+                f"C{clean_body}CCOCC(=O)N",
+                f"CC{clean_body}CC(=O)N",
+                f"C{clean_body}C(=O)N",
+            ])
+        else:
+            # Pure aliphatic alkyl
+            candidates.extend([
+                f"CC{clean_body}CC(=O)N",
+                f"C{clean_body}C(=O)N",
+                f"CCCC{clean_body}CC(=O)N",
+            ])
+            
+        # Fallbacks to guarantee synthesis assembly across diverse edge cases
+        candidates.extend([
+            f"CC{clean_body}CC(=O)N",
+            f"C{clean_body}C(=O)N",
+            f"CCOCC{clean_body}CCOCC(=O)N",
+            f"CCc7cn(nn7){clean_body}COCCC(=O)N",
+        ])
+        
+        # Deduplicate while strictly maintaining priority order
+        seen = set()
+        deduped = []
+        for c in candidates:
+            if c not in seen:
+                seen.add(c)
+                deduped.append(c)
+        return deduped
 
     def _count_linker_span(self, linker_smiles: str) -> int:
         """Count heavy atoms in the connecting linker bridge."""
@@ -273,22 +332,24 @@ class ProtacChemicalAssembler:
 
     def _classify_scaffold(self, linker_smiles: str) -> str:
         """Classify the structural class of the linker."""
-        if "c1cn(nn1)" in linker_smiles:
+        if "c7cn(nn7)" in linker_smiles or "c1cn(nn1)" in linker_smiles:
             return "1,2,3-Triazole Rigid Linker"
-        elif "1CCN" in linker_smiles or "N1CCN" in linker_smiles:
+        elif "N7CCN" in linker_smiles or "N1CCN" in linker_smiles or "C7CCN" in linker_smiles or "C1CCN" in linker_smiles:
             return "Piperazine / Heterocyclic Constrained"
         elif "#" in linker_smiles:
             return "Alkynyl Rigid / Semi-Rigid"
-        elif "OCC" in linker_smiles or "COCCO" in linker_smiles:
+        elif "OCC" in linker_smiles or "COCCO" in linker_smiles or "CO" in linker_smiles:
             return "PEG (Polyethylene Glycol) Flexible"
         else:
             return "Aliphatic Alkyl / Hybrid"
 
 
 class GenerativeProtacPipeline:
-    """Master controller that trains/initializes the C-VAE and generates candidate linkers."""
+    """Master controller that loads/trains the C-VAE and generates candidate linkers."""
 
-    def __init__(self, warhead_smiles: str, e3_smiles: str, random_seed: int = 42):
+    def __init__(self, warhead_smiles: str, e3_smiles: str, 
+                 checkpoint_path: Optional[str] = "checkpoints/cvae_linker_model.pt",
+                 random_seed: int = 42):
         random.seed(random_seed)
         np.random.seed(random_seed)
         torch.manual_seed(random_seed)
@@ -298,10 +359,48 @@ class GenerativeProtacPipeline:
         self.warhead_fp = torch.from_numpy(featurize_anchor_smiles(warhead_smiles)).float().unsqueeze(0)
         self.e3_fp = torch.from_numpy(featurize_anchor_smiles(e3_smiles)).float().unsqueeze(0)
 
-        # Instantiate C-VAE model
+        # Instantiate C-VAE model and assembler
         self.model = ConditionalLinkerVAE()
         self.assembler = ProtacChemicalAssembler(warhead_smiles, e3_smiles)
-        self._pretrain_synthetic_prior()
+        self.checkpoint_metadata = {}
+
+        # Prioritize loading pre-trained checkpoint
+        loaded = False
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            loaded = self.load_checkpoint(checkpoint_path)
+
+        if not loaded:
+            logger.warning("No valid checkpoint loaded; falling back to calibration on synthetic prior.")
+            self._pretrain_synthetic_prior()
+
+    def load_checkpoint(self, checkpoint_path: str) -> bool:
+        """Load and validate trained PyTorch C-VAE checkpoint."""
+        try:
+            ckpt = torch.load(checkpoint_path, map_location="cpu")
+            required_keys = ["model_state_dict", "vocab"]
+            for rk in required_keys:
+                if rk not in ckpt:
+                    logger.error(f"Checkpoint {checkpoint_path} missing required key: {rk}")
+                    return False
+
+            ckpt_vocab = ckpt["vocab"]
+            if len(ckpt_vocab) != VOCAB_SIZE:
+                logger.warning(f"Vocabulary size discrepancy: ckpt has {len(ckpt_vocab)}, model has {VOCAB_SIZE}")
+
+            self.model.load_state_dict(ckpt["model_state_dict"])
+            self.model.eval()
+            self.checkpoint_metadata = {
+                "checkpoint_path": checkpoint_path,
+                "epoch": ckpt.get("epoch", "unknown"),
+                "val_loss": round(float(ckpt.get("val_loss", 0.0)), 4) if ckpt.get("val_loss") else None,
+                "loaded_successfully": True
+            }
+            logger.info(f"Loaded trained C-VAE checkpoint from {checkpoint_path} "
+                        f"(Epoch: {self.checkpoint_metadata['epoch']}, Val Loss: {self.checkpoint_metadata['val_loss']})")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load checkpoint from {checkpoint_path}: {e}")
+            return False
 
     def _pretrain_synthetic_prior(self):
         """

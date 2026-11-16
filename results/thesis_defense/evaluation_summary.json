@@ -1,0 +1,100 @@
+{
+  "project": "AI-Driven Targeted Protein Degradation (TPD) Pipeline for AML Targets",
+  "authors": [
+    "Madhav Yalamarthi",
+    "Hareesh"
+  ],
+  "target": "BRD4 (BD1/BD2)",
+  "e3_ligase": "Cereblon (CRBN)",
+  "pdb_reference": "6BOY",
+  "comparator_pdb": "5T35",
+  "model_architecture": "Dual-Anchor Conditional VAE (C-VAE)",
+  "checkpoint": {
+    "path": "checkpoints/cvae_linker_model.pt",
+    "epoch": 11,
+    "val_loss": 1.8342,
+    "status": "Verified & Active"
+  },
+  "top_leads": [
+    {
+      "rank": 1,
+      "id": "PROTAC-AML-028",
+      "scaffold": "Piperazine / Heterocyclic Constrained",
+      "linker_length": 14,
+      "mw": 781.3,
+      "logp": 2.99,
+      "tpsa": 182.8,
+      "sascore": 3.14,
+      "qed": 0.146,
+      "cooperativity_alpha": 0.28,
+      "deltaG_ternary_kcal": -18.49,
+      "apparent_kd_nm": 0.01,
+      "integrated_rank_score": 0.351,
+      "smiles": "Cc1sc2nc(CC(=O)NCCN3CCNCC3C#CCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 2,
+      "id": "PROTAC-AML-025",
+      "scaffold": "Aliphatic Alkyl / Hybrid",
+      "linker_length": 14,
+      "mw": 786.31,
+      "logp": 4.78,
+      "tpsa": 196.63,
+      "sascore": 2.71,
+      "qed": 0.097,
+      "cooperativity_alpha": 0.23,
+      "deltaG_ternary_kcal": -18.37,
+      "apparent_kd_nm": 0.01,
+      "integrated_rank_score": 0.326,
+      "smiles": "Cc1sc2nc(CC(=O)NCCCNC(=O)CCCCCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 3,
+      "id": "PROTAC-AML-014",
+      "scaffold": "Piperazine / Heterocyclic Constrained",
+      "linker_length": 17,
+      "mw": 829.38,
+      "logp": 3.79,
+      "tpsa": 192.03,
+      "sascore": 3.14,
+      "qed": 0.101,
+      "cooperativity_alpha": 0.03,
+      "deltaG_ternary_kcal": -17.13,
+      "apparent_kd_nm": 0.01,
+      "integrated_rank_score": 0.299,
+      "smiles": "Cc1sc2nc(CC(=O)NCCN3CCNCC3CCOCCCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 4,
+      "id": "PROTAC-AML-038",
+      "scaffold": "Aliphatic Alkyl / Hybrid",
+      "linker_length": 15,
+      "mw": 792.32,
+      "logp": 5.68,
+      "tpsa": 180.42,
+      "sascore": 2.76,
+      "qed": 0.1,
+      "cooperativity_alpha": 0.01,
+      "deltaG_ternary_kcal": -16.54,
+      "apparent_kd_nm": 0.01,
+      "integrated_rank_score": 0.291,
+      "smiles": "Cc1sc2nc(CC(=O)NCCc3ccncc3CCCCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 5,
+      "id": "PROTAC-AML-020",
+      "scaffold": "Alkynyl Rigid / Semi-Rigid",
+      "linker_length": 14,
+      "mw": 773.27,
+      "logp": 5.31,
+      "tpsa": 167.53,
+      "sascore": 2.77,
+      "qed": 0.103,
+      "cooperativity_alpha": 0.01,
+      "deltaG_ternary_kcal": -16.37,
+      "apparent_kd_nm": 0.01,
+      "integrated_rank_score": 0.29,
+      "smiles": "Cc1sc2nc(CC(=O)NCCC#Cc3ccc(CC(=O)Nc4cccc5c4C(=O)N(C4CCC(=O)NC4=O)C5=O)cc3)nc(-c3ccc(Cl)cc3)c2c1C"
+    }
+  ]
+}

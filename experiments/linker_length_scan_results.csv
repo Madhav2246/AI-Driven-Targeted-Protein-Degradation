@@ -1,12 +1,12 @@
 linker_span_atoms,predicted_end_to_end_span_A,inter_protein_sasa_A2,steric_clash_penalty_kcal,clash_count,conformational_strain_kcal,cooperativity_alpha,deltaG_ternary_kcal,apparent_kd_nm,biological_feasibility
-6,9.98,100.0,19.77,7,6.7,0.01,1.39,10422985282.4,Steric Collision
-8,11.14,358.2,1.2,0,5.1,1.93,-19.64,0.01,Steric Collision
-10,12.3,539.5,0.2,0,-0.2,150.0,-23.42,0.01,High Entropy Penalty
-12,13.46,568.3,0.2,0,1.25,150.0,-23.28,0.01,Optimal
-13,14.04,542.2,0.2,0,0.95,150.0,-23.15,0.01,Optimal
-14,14.62,516.1,0.2,0,0.95,150.0,-22.94,0.01,Optimal
-15,15.2,360.0,1.2,0,1.25,10.03,-20.62,0.01,Optimal
-16,15.78,342.6,1.2,0,2.2,5.32,-20.24,0.01,High Entropy Penalty
-18,16.94,206.9,2.0,0,3.0,0.16,-18.16,0.01,High Entropy Penalty
-20,18.1,131.5,2.46,0,3.8,0.02,-16.89,0.01,High Entropy Penalty
-22,19.26,80.0,2.92,0,4.6,0.01,-15.82,0.01,High Entropy Penalty
+6,17.18,122.2,16.44,6,3.5,0.01,-2.91,7392781.23,Steric Collision
+8,19.94,105.6,2.51,0,4.71,0.01,-16.41,0.01,Steric Collision
+10,19.16,152.4,2.24,0,1.54,0.09,-17.84,0.01,High Entropy Penalty
+12,19.58,127.2,2.38,0,6.75,0.01,-16.2,0.01,High Entropy Penalty
+13,19.33,142.2,2.3,0,5.45,0.01,-16.73,0.01,High Entropy Penalty
+14,19.7,120.0,2.42,0,4.43,0.01,-16.68,0.01,High Entropy Penalty
+15,24.16,80.0,3.99,0,3.27,0.01,-15.08,0.01,High Entropy Penalty
+16,19.89,108.6,2.49,0,0.0,0.06,-17.63,0.01,High Entropy Penalty
+18,22.83,80.0,3.52,0,9.32,0.01,-14.04,0.05,High Entropy Penalty
+20,25.15,80.0,4.33,0,0.33,0.01,-15.48,0.01,High Entropy Penalty
+22,22.83,80.0,3.52,0,5.2,0.01,-15.07,0.01,High Entropy Penalty
