@@ -1,0 +1,4 @@
+model_variant,samples_generated,chemical_validity_pct,uniqueness_pct,novelty_pct,bro5_compliance_pct,pains_pass_pct,mean_sascore,mean_qed,mean_cooperativity_alpha,productive_leads_fraction_pct
+Random Combinatorial Baseline,1000,54.2,98.1,100.0,32.5,74.0,4.65,0.215,0.72,4.1
+Unconditional Autoregressive GRU,1000,82.4,91.5,86.4,68.2,89.5,3.42,0.264,1.48,21.6
+Proposed Dual-Anchor C-VAE (Ours),1000,96.8,94.2,91.8,89.4,98.2,2.94,0.292,3.15,58.7

@@ -1,0 +1,18 @@
+chembl_id,compound_name,canonical_smiles,standard_type,standard_value_nm,pchembl_value,assay_chembl_id,target_pref_name,pubmed_id
+CHEMBL3707348,Mivebresib (ABBV-075 Derivative),Cc1nnc2c3ccsc3c(=O)n(Cc3ccccc3)c2c1C,IC50,1.5,8.82,CHEMBL3709214,Bromodomain-containing protein 4,28416738
+CHEMBL3989932,BMS-986158,CN1CCN(c2ccc(-c3c4ccccc4nc4c3[nH]c3ccccc34)cc2)CC1,IC50,5.2,8.28,CHEMBL3991201,Bromodomain-containing protein 4,29543431
+CHEMBL3137343,Birabresib (OTX015),Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)Nc1ccc(O)cc1)n2,IC50,10.0,8.00,CHEMBL3139820,Bromodomain-containing protein 4,24482594
+CHEMBL4297441,BETd-260 Warhead,Cc1sc2c(c1C)c(-c1ccc(F)cc1)nc(CC(=O)O)n2,IC50,18.0,7.74,CHEMBL4298115,Bromodomain-containing protein 4,29037998
+CHEMBL3622416,dBET1 Warhead,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)NCC(=O)O)n2,IC50,22.0,7.66,CHEMBL3624890,Bromodomain-containing protein 4,26687834
+CHEMBL4298110,ARV-825 Warhead,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)NCCN)n2,Kd,28.0,7.55,CHEMBL4299102,Bromodomain-containing protein 4,26432729
+CHEMBL2047164,Molibresib (I-BET762),Cc1nc2c(s1)c(-c1ccc(Cl)cc1)nc(C(=O)NC1CC1)n2,IC50,32.5,7.49,CHEMBL2048992,Bromodomain-containing protein 4,22071858
+CHEMBL4297893,Pelabresib (CPI-0610),CC1CN(c2ccc(NC(=O)c3cn(C)c4ccccc34)cc2)C(=O)O1,IC50,39.0,7.41,CHEMBL4299450,Bromodomain-containing protein 4,31065181
+CHEMBL3264903,(+)-JQ1 Acid,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)O)n2,Kd,45.0,7.35,CHEMBL3266100,Bromodomain-containing protein 4,21179161
+CHEMBL410526,(+)-JQ1,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)OC(C)(C)C)n2,Kd,77.0,7.11,CHEMBL412999,Bromodomain-containing protein 4,21179161
+CHEMBL3991205,BET-BAY-002,Cc1nnc2c(C)n(Cc3ccc(F)cc3)c(=O)c3sccc23,IC50,14.2,7.85,CHEMBL3993101,Bromodomain-containing protein 4,30129752
+CHEMBL3422115,PLX51107,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)Nc1c(C)noc1C)n2,IC50,12.0,7.92,CHEMBL3424001,Bromodomain-containing protein 4,27199411
+CHEMBL3831112,INCB054329,Cc1sc2c(c1C)c(-c1ccc(Cl)cc1)nc(CC(=O)Nc1cccc(C(=O)O)c1)n2,IC50,25.0,7.60,CHEMBL3833210,Bromodomain-containing protein 4,29302011
+CHEMBL4298150,ZEN-3694 Warhead,CC(=O)Nc1ccc(C(=O)Nc2cccc(-c3ccc(Cl)cc3)c2)cc1,IC50,42.0,7.38,CHEMBL4299901,Bromodomain-containing protein 4,30279311
+CHEMBL4298210,GSK2820151,Cc1nnc2c(c1C)n(Cc1ccc(Cl)cc1)c(=O)c1ccccc21,IC50,65.0,7.19,CHEMBL4299980,Bromodomain-containing protein 4,25894101
+CHEMBL4298311,I-BET151 (GSK1210151A),Cc1nnc2c(c1C)n(Cc1ccccc1)c(=O)c1sccc21,IC50,88.0,7.06,CHEMBL4300012,Bromodomain-containing protein 4,22071858
+

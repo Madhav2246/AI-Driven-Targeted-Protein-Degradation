@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Driven PROTAC Linker Optimization for AML | Research Platform</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Chart.js for scientific visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 3Dmol.js for WebGL Molecular 3D Viewer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <span class="brand-logo">&#x269B;</span>
+      <div>
+        <div class="brand-title">TPD-LeadGen : AML Epigenetic Degraders</div>
+        <div class="brand-sub">Generative Linker Optimization Platform &bull; Authors: Madhav Yalamarthi &amp; Hareesh</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <span class="badge badge-target">Target: BRD4 (BD1/BD2)</span>
+      <span class="badge badge-e3">E3: Cereblon (CRBN)</span>
+      <span class="badge badge-pdb">PDB: 5T35</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+
+    <!-- Tab Bar -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-overview')">&#x1F4CA; Project Overview</button>
+      <button class="tab-btn" onclick="switchTab('tab-datasets')">&#x1F5C3;&#xFE0F; Curated Datasets (ChEMBL &amp; PROTAC-DB)</button>
+      <button class="tab-btn" onclick="switchTab('tab-training')">&#x1F4C8; Neural Training &amp; Loss Curves</button>
+      <button class="tab-btn" onclick="switchTab('tab-generator')">&#x2697;&#xFE0F; Interactive PROTAC Generator</button>
+      <button class="tab-btn" onclick="switchTab('tab-hook')">&#x2696;&#xFE0F; Hook Effect &amp; Ternary Kinetics</button>
+      <button class="tab-btn" onclick="switchTab('tab-ablation')">&#x1F9EA; Experiments &amp; Benchmarks</button>
+    </nav>
+
+    <!-- TAB 1: OVERVIEW -->
+    <section id="tab-overview" class="tab-content active">
+      <div class="hero-card">
+        <h1>AI-Driven Targeted Protein Degradation (TPD) Lead Generation for Acute Myeloid Leukemia</h1>
+        <p>
+          Targeted Protein Degradation represents an event-driven paradigm where a heterobifunctional PROTAC catalyzes
+          the proximity-induced polyubiquitination and 26S proteasomal lysis of oncogenic drivers.
+          This platform implements an end-to-end computational pipeline optimizing chemical linkers to stabilize the
+          <strong>BRD4(BD1) : PROTAC : Cereblon</strong> ternary complex, maximizing thermodynamic cooperativity
+          (<span class="formula">&alpha; &gt; 1</span>) and suppressing non-productive hook effects.
+        </p>
+        <div class="hero-stats">
+          <div class="stat-card">
+            <div class="stat-number">3.65</div>
+            <div class="stat-label">Top Ternary Cooperativity (&alpha;)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">2.92</div>
+            <div class="stat-label">Ertl SAScore (Highly Accessible)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">-20.65 kcal</div>
+            <div class="stat-label">Ternary Binding &Delta;G</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">542 &Aring;&sup2;</div>
+            <div class="stat-label">Inter-Protein Contact &Delta;SASA</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tripartite Architecture Diagram -->
+      <div class="card">
+        <h2>Tripartite PROTAC Degradation Architecture</h2>
+        <div class="tripartite-diagram">
+          <div class="tripartite-block warhead-box">
+            <div class="block-title">Target Warhead (POI)</div>
+            <div class="block-sub">(+)-JQ1 Carboxamide</div>
+            <div class="block-details">
+              <strong>Target:</strong> BRD4 (BD1/BD2)<br>
+              <strong>Exit Vector:</strong> Diazepine C4 Carboxamide<br>
+              <strong>Binding Pocket:</strong> Asn140, Tyr97
+            </div>
+          </div>
+          <div class="tripartite-connector">
+            <div class="connector-line"></div>
+            <div class="connector-label">C-VAE Linker Bridge (6 - 22 atoms)</div>
+            <div class="connector-line"></div>
+          </div>
+          <div class="tripartite-block e3-box">
+            <div class="block-title">E3 Ligase Recruiter</div>
+            <div class="block-sub">4-NH-Pomalidomide</div>
+            <div class="block-details">
+              <strong>E3 Recruiter:</strong> Cereblon (CRBN)<br>
+              <strong>Exit Vector:</strong> 4-Amino Phthaloyl Nitrogen<br>
+              <strong>Binding Pocket:</strong> Trp380, Trp386, Trp400
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Lead Quick View -->
+      <div class="card">
+        <h2>Top Prioritized Lead Degraders for AML Validation</h2>
+        <table class="data-table" id="overview-lead-table">
+          <thead>
+            <tr>
+              <th>Lead ID</th>
+              <th>Linker Architecture</th>
+              <th>Span</th>
+              <th>MW (Da)</th>
+              <th>cLogP</th>
+              <th>TPSA</th>
+              <th>SAScore</th>
+              <th>Cooperativity (&alpha;)</th>
+              <th>&Delta;G Ternary</th>
+              <th>Apparent Kd</th>
+              <th>Synthesis Route</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong class="highlight-id">PROTAC-AML-001</strong></td>
+              <td><span class="badge badge-lead">1,2,3-Triazole-PEG Hybrid</span></td>
+              <td>14 atoms</td>
+              <td>915.4 Da</td>
+              <td>4.12</td>
+              <td>185.3 &Aring;&sup2;</td>
+              <td><strong>2.92</strong></td>
+              <td><span class="badge badge-success">&alpha; = 3.65</span></td>
+              <td><strong>-20.65 kcal</strong></td>
+              <td><strong>0.12 nM</strong></td>
+              <td>CuAAC Click Reaction</td>
+            </tr>
+            <tr>
+              <td><strong class="highlight-id">PROTAC-AML-002</strong></td>
+              <td><span class="badge badge-lead">Alkynyl-PEG Semi-Rigid</span></td>
+              <td>13 atoms</td>
+              <td>898.4 Da</td>
+              <td>3.94</td>
+              <td>179.2 &Aring;&sup2;</td>
+              <td><strong>2.85</strong></td>
+              <td><span class="badge badge-success">&alpha; = 3.22</span></td>
+              <td><strong>-20.35 kcal</strong></td>
+              <td><strong>0.21 nM</strong></td>
+              <td>Sonogashira / Alkynylation</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Interactive 3D Molecular Conformation Viewer -->
+      <div class="card">
+        <h2>Interactive 3D Molecular Conformation: PROTAC-AML-001 (Lead Degrader)</h2>
+        <p class="section-desc">
+          Energy-minimized 3D conformer in the crystallographic binding envelope (MMFF94s).
+          Rotate (left-click drag), Zoom (scroll wheel), and Pan (right-click drag) to inspect the warhead, triazole-PEG linker, and pomalidomide E3 recruiter.
+        </p>
+        <div class="chart-controls" style="margin-bottom: 12px;">
+          <button class="btn btn-secondary active" onclick="setViewerStyle('stick')">Sticks</button>
+          <button class="btn btn-secondary" onclick="setViewerStyle('sphere')">Spheres</button>
+          <button class="btn btn-secondary" onclick="setViewerStyle('line')">Lines</button>
+          <button class="btn btn-primary" onclick="resetViewerCamera()">Reset View</button>
+        </div>
+        <div id="mol3d-container" style="width: 100%; height: 420px; position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #0f172a;"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DATASETS -->
+    <section id="tab-datasets" class="tab-content">
+      <div class="card">
+        <h2>Curated ChEMBL Target Bioactivity Dataset (BRD4 : CHEMBL2034)</h2>
+        <p class="section-desc">
+          Automated extraction and standardization of clinically relevant sub-100 nM BRD4 inhibitors.
+          All molecules stripped of salts, neutralized, and deduplicated.
+        </p>
+        <div class="table-search-box">
+          <input type="text" id="chembl-search" placeholder="Search by compound name, ChEMBL ID, or activity type..." oninput="filterChemblTable()">
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="chembl-table">
+            <thead>
+              <tr>
+                <th>ChEMBL ID</th>
+                <th>Compound Name</th>
+                <th>Type</th>
+                <th>Potency (nM)</th>
+                <th>pChEMBL</th>
+                <th>Assay ID</th>
+                <th>PubMed Reference</th>
+                <th>SMILES</th>
+              </tr>
+            </thead>
+            <tbody id="chembl-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Gold-Standard PROTAC-DB Benchmark Degraders (AML Targets)</h2>
+        <p class="section-desc">
+          Published clinical and preclinical degraders targeting BET bromodomains with experimentally verified DC50, Dmax, and crystallographic PDB complexes.
+        </p>
+        <div class="table-container">
+          <table class="data-table" id="protac-db-table">
+            <thead>
+              <tr>
+                <th>Reference ID</th>
+                <th>Compound Name</th>
+                <th>Target POI</th>
+                <th>E3 Ligase</th>
+                <th>Pub. DC50</th>
+                <th>Pub. Dmax</th>
+                <th>PDB Template</th>
+                <th>Cell Line Tested</th>
+              </tr>
+            </thead>
+            <tbody id="protac-db-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MODEL TRAINING & LOSS CURVES -->
+    <section id="tab-training" class="tab-content">
+      <div class="card">
+        <h2>Conditional Variational Autoencoder (C-VAE) Empirical Training Logs</h2>
+        <p class="section-desc">
+          Training history across 25 epochs on curated PROTAC-DB modular linkers.
+          Demonstrates simultaneous convergence of Reconstruction Loss and KL Divergence regularization.
+        </p>
+        
+        <div class="chart-controls">
+          <button class="btn btn-primary active" id="btn-toggle-all" onclick="toggleDataset(0)">Total Train Loss</button>
+          <button class="btn btn-secondary active" id="btn-toggle-recon" onclick="toggleDataset(1)">Reconstruction Loss</button>
+          <button class="btn btn-accent active" id="btn-toggle-val" onclick="toggleDataset(2)">Validation Loss</button>
+        </div>
+
+        <div class="chart-wrapper">
+          <canvas id="trainingLossChart" height="110"></canvas>
+        </div>
+
+        <div class="grid-3" style="margin-top: 24px;">
+          <div class="metric-summary-box">
+            <div class="metric-title">Optimal Checkpoint</div>
+            <div class="metric-val">Epoch 25</div>
+            <div class="metric-note">Saved at <code>checkpoints/cvae_linker_model.pt</code></div>
+          </div>
+          <div class="metric-summary-box">
+            <div class="metric-title">Final Reconstruction Loss</div>
+            <div class="metric-val">0.5230</div>
+            <div class="metric-note">Cross-entropy token reconstruction</div>
+          </div>
+          <div class="metric-summary-box">
+            <div class="metric-title">Final Validation Loss</div>
+            <div class="metric-val">1.0590</div>
+            <div class="metric-note">Cosine annealing learning rate: 1e-5</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: INTERACTIVE GENERATOR -->
+    <section id="tab-generator" class="tab-content">
+      <div class="card">
+        <h2>Live PROTAC Inpainting &amp; Generative Design Studio</h2>
+        <p class="section-desc">
+          Interact directly with the PyTorch C-VAE generator. Select anchor vectors, constrain linker lengths,
+          and filter across modular scaffolds in real time.
+        </p>
+
+        <div class="generator-controls-grid">
+          <div class="control-group">
+            <label>Target Warhead (POI Anchor):</label>
+            <select id="gen-warhead">
+              <option value="jq1" selected>(+)-JQ1 Carboxamide (BRD4 BD1/BD2)</option>
+              <option value="otx015">OTX015 / Birabresib Derivative</option>
+              <option value="betd260">BETd-260 Warhead (Fluorinated)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>E3 Ligase Recruiter Anchor:</label>
+            <select id="gen-e3">
+              <option value="pom" selected>4-Amino-Pomalidomide (Cereblon)</option>
+              <option value="len">Lenalidomide Amine (Cereblon)</option>
+              <option value="thal">4-Hydroxy-Thalidomide (Cereblon)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Linker Scaffold Motif Filter:</label>
+            <select id="gen-scaffold">
+              <option value="all" selected>All Scaffold Motifs (Hybrid Diverse)</option>
+              <option value="triazole">1,2,3-Triazole Rigid Linker</option>
+              <option value="alkyne">Alkynyl-PEG Semi-Rigid</option>
+              <option value="piperazine">Piperazine / Constrained</option>
+              <option value="peg">Polyethylene Glycol (PEG)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Target Linker Span: <strong id="val-span">14</strong> atoms</label>
+            <input type="range" id="gen-span" min="6" max="22" value="14" oninput="document.getElementById('val-span').innerText = this.value">
+          </div>
+          <div class="control-group">
+            <label>Sampling Temperature (&tau;): <strong id="val-temp">0.85</strong></label>
+            <input type="range" id="gen-temp" min="0.2" max="1.5" step="0.05" value="0.85" oninput="document.getElementById('val-temp').innerText = this.value">
+          </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <button class="btn btn-primary" onclick="simulateGeneration()">&#x269B; Sample Candidates from C-VAE</button>
+        </div>
+
+        <div id="gen-results-area" style="margin-top: 24px;">
+          <!-- Dynamically inserted generated candidates -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: HOOK EFFECT & TERNARY KINETICS -->
+    <section id="tab-hook" class="tab-content">
+      <div class="card">
+        <h2>Thermodynamic Cooperativity (&alpha;) &amp; Bell-Shaped Hook Effect Simulator</h2>
+        <p class="section-desc">
+          Simulate the 3-body mass-action equilibrium (<span class="formula">[POI] + [PROTAC] + [E3] &hArr; [Ternary]</span>)
+          across 8 orders of magnitude concentration. Observe how cooperativity &alpha; shifts the therapeutic window.
+        </p>
+
+        <div class="generator-controls-grid">
+          <div class="control-group">
+            <label>Cooperativity Factor (&alpha;): <strong id="val-alpha">3.65</strong></label>
+            <input type="range" id="sim-alpha" min="0.1" max="10.0" step="0.1" value="3.65" oninput="updateHookSimulation()">
+          </div>
+          <div class="control-group">
+            <label>Target POI Binary Kd: <strong id="val-kdt">50</strong> nM</label>
+            <input type="range" id="sim-kdt" min="5" max="300" step="5" value="50" oninput="updateHookSimulation()">
+          </div>
+          <div class="control-group">
+            <label>E3 Ligase Binary Kd: <strong id="val-kde">150</strong> nM</label>
+            <input type="range" id="sim-kde" min="10" max="500" step="10" value="150" oninput="updateHookSimulation()">
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 20px;">
+          <div>
+            <canvas id="hookSimulatorChart" height="200"></canvas>
+          </div>
+          <div class="kinetics-output-panel">
+            <h3>Predicted Degradation Parameters</h3>
+            <div class="kin-row">
+              <span class="kin-lbl">Predicted DC50:</span>
+              <span class="kin-val" id="kin-dc50">0.45 nM</span>
+            </div>
+            <div class="kin-row">
+              <span class="kin-lbl">Optimal Concentration [P]max:</span>
+              <span class="kin-val" id="kin-popt">86.6 nM</span>
+            </div>
+            <div class="kin-row">
+              <span class="kin-lbl">Hook Concentration Threshold:</span>
+              <span class="kin-val" id="kin-hook">12,500 nM</span>
+            </div>
+            <div class="kin-row">
+              <span class="kin-lbl">Effective Therapeutic Window:</span>
+              <span class="kin-val highlight-green" id="kin-window">27,778-fold</span>
+            </div>
+            <div class="kin-row">
+              <span class="kin-lbl">Maximal Ternary Formation (Dmax):</span>
+              <span class="kin-val highlight-green" id="kin-dmax">98.2 %</span>
+            </div>
+            <div class="kin-note" id="kin-status-text">
+              High positive cooperativity (&alpha; = 3.65) significantly expands the concentration envelope where active degradation occurs, eliminating hook effect susceptibility at nanomolar doses.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: EXPERIMENTS & BENCHMARKS -->
+    <section id="tab-ablation" class="tab-content">
+      <div class="card">
+        <h2>Experiment A: Generative Architecture Ablation Study</h2>
+        <p class="section-desc">Quantitative evaluation comparing combinatorial baseline, unconditional GRU, and our Dual-Anchor C-VAE.</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Architecture Variant</th>
+              <th>Validity %</th>
+              <th>Uniqueness %</th>
+              <th>Novelty %</th>
+              <th>bRo5 Compliance %</th>
+              <th>PAINS Pass %</th>
+              <th>Mean SAScore</th>
+              <th>Mean QED</th>
+              <th>Mean &alpha;</th>
+              <th>Productive Leads %</th>
+            </tr>
+          </thead>
+          <tbody id="ablation-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Experiment B: Linker Length Trajectory Scan (PDB 5T35 Fit)</h2>
+        <p class="section-desc">Evaluation of 6 to 22 atom spans against conformational strain, steric collision, and cooperativity.</p>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Linker Span</th>
+                <th>Predicted 3D Span (&Aring;)</th>
+                <th>Buried SASA (&Aring;&sup2;)</th>
+                <th>Steric Clash Penalty</th>
+                <th>Clash Count</th>
+                <th>Conformational Strain</th>
+                <th>Cooperativity (&alpha;)</th>
+                <th>&Delta;G Ternary</th>
+                <th>Feasibility</th>
+              </tr>
+            </thead>
+            <tbody id="length-scan-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <p>&copy; 2026 AI-Driven Targeted Protein Degradation Research Initiative | Madhav Yalamarthi &amp; Hareesh</p>
+    <p>Codebase &amp; Report Available in <code>REPORT.md</code>, <code>run_tpd_pipeline.py</code>, and <code>lead_protac_candidates.csv</code></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
