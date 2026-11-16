@@ -238,7 +238,9 @@ def plot_lead_property_comparison():
         bars = ax.bar(compounds, vals, color=color, alpha=0.85, edgecolor="black", width=0.55)
         ax.set_title(title, fontweight="bold", fontsize=11)
         ax.set_ylabel(ylabel)
-        ax.set_ylim(ylim[0], ylim[1])
+        upper_limit = max(ylim[1], max(vals) * 1.15) if vals else ylim[1]
+        ax.set_ylim(ylim[0], upper_limit)
+        ax.set_xticks(range(len(compounds)))
         ax.set_xticklabels(compounds, rotation=25, ha="right", fontweight="semibold")
         for b in bars:
             h = b.get_height()

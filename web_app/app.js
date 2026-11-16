@@ -44,21 +44,22 @@ const EMBEDDED_DATA = {
     { epoch: 25, train: 0.635, recon: 0.523, val: 1.059 }
   ],
   ablation: [
-    { variant: "Random Combinatorial Baseline", val: "54.2%", uniq: "98.1%", nov: "100%", bro5: "32.5%", pains: "74.0%", sa: "4.65", qed: "0.215", alpha: "0.72", prod: "4.1%" },
-    { variant: "Unconditional Autoregressive GRU", val: "82.4%", uniq: "91.5%", nov: "86.4%", bro5: "68.2%", pains: "89.5%", sa: "3.42", qed: "0.264", alpha: "1.48", prod: "21.6%" },
-    { variant: "Proposed Dual-Anchor C-VAE (Ours)", val: "96.8%", uniq: "94.2%", nov: "91.8%", bro5: "89.4%", pains: "98.2%", sa: "2.94", qed: "0.292", alpha: "3.15", prod: "58.7%" }
+    { variant: "Random Combinatorial Baseline", val: "100.0%", uniq: "100.0%", nov: "98.0%", bro5: "92.0%", pains: "100.0%", sa: "2.95", qed: "0.078", alpha: "38.50", prod: "66.0%" },
+    { variant: "Unconditional Autoregressive GRU", val: "100.0%", uniq: "32.0%", nov: "100.0%", bro5: "84.0%", pains: "100.0%", sa: "2.92", qed: "0.055", alpha: "23.32", prod: "38.0%" },
+    { variant: "Proposed Dual-Anchor C-VAE (Ours)", val: "100.0%", uniq: "86.0%", nov: "100.0%", bro5: "90.0%", pains: "100.0%", sa: "2.82", qed: "0.058", alpha: "29.12", prod: "52.0%" }
   ],
   length_scan: [
-    { span: "6 atoms", dist: "9.98 A", sasa: "90 A2", clash: "19.77 kcal", count: "7", strain: "6.70 kcal", alpha: "0.01", dg: "-0.83 kcal", feas: "Steric Collision" },
-    { span: "8 atoms", dist: "11.14 A", sasa: "234 A2", clash: "15.71 kcal", count: "5", strain: "5.10 kcal", alpha: "0.02", dg: "-4.25 kcal", feas: "Steric Collision" },
-    { span: "10 atoms", dist: "12.30 A", sasa: "425 A2", clash: "1.20 kcal", count: "0", strain: "1.85 kcal", alpha: "1.85", dg: "-19.45 kcal", feas: "Permissive" },
-    { span: "12 atoms", dist: "13.46 A", sasa: "568 A2", clash: "0.20 kcal", count: "0", strain: "1.25 kcal", alpha: "3.42", dg: "-20.55 kcal", feas: "Optimal" },
-    { span: "13 atoms", dist: "14.04 A", sasa: "542 A2", clash: "0.20 kcal", count: "0", strain: "0.95 kcal", alpha: "3.65", dg: "-20.65 kcal", feas: "Optimal" },
-    { span: "14 atoms", dist: "14.62 A", sasa: "516 A2", clash: "0.20 kcal", count: "0", strain: "0.95 kcal", alpha: "3.38", dg: "-20.48 kcal", feas: "Optimal" },
-    { span: "15 atoms", dist: "15.20 A", sasa: "490 A2", clash: "0.20 kcal", count: "0", strain: "1.25 kcal", alpha: "2.95", dg: "-20.15 kcal", feas: "Optimal" },
-    { span: "16 atoms", dist: "15.78 A", sasa: "435 A2", clash: "1.20 kcal", count: "0", strain: "2.20 kcal", alpha: "1.92", dg: "-19.55 kcal", feas: "Permissive" },
-    { span: "18 atoms", dist: "16.94 A", sasa: "277 A2", clash: "2.00 kcal", count: "0", strain: "3.00 kcal", alpha: "0.85", dg: "-18.25 kcal", feas: "Entropy Penalty" },
-    { span: "22 atoms", dist: "19.26 A", sasa: "126 A2", clash: "2.92 kcal", count: "0", strain: "4.60 kcal", alpha: "0.24", dg: "-15.85 kcal", feas: "Entropy Penalty" }
+    { span: "6 atoms", dist: "6.92 A", sasa: "94 A2", clash: "14.70 kcal", count: "8", strain: "10.47 kcal", alpha: "0.001", dg: "-2.69 kcal", feas: "Steric Collision" },
+    { span: "8 atoms", dist: "9.14 A", sasa: "250 A2", clash: "9.15 kcal", count: "5", strain: "4.64 kcal", alpha: "0.001", dg: "-10.94 kcal", feas: "Steric Collision" },
+    { span: "10 atoms", dist: "11.01 A", sasa: "381 A2", clash: "4.47 kcal", count: "2", strain: "0.00 kcal", alpha: "0.091", dg: "-17.83 kcal", feas: "Transition Boundary" },
+    { span: "12 atoms", dist: "12.08 A", sasa: "486 A2", clash: "0.41 kcal", count: "0", strain: "1.75 kcal", alpha: "150.0", dg: "-22.29 kcal", feas: "Optimal" },
+    { span: "13 atoms", dist: "10.75 A", sasa: "363 A2", clash: "5.12 kcal", count: "2", strain: "9.72 kcal", alpha: "0.001", dg: "-14.60 kcal", feas: "Steric Collision" },
+    { span: "14 atoms", dist: "12.33 A", sasa: "495 A2", clash: "0.39 kcal", count: "0", strain: "6.69 kcal", alpha: "24.40", dg: "-21.14 kcal", feas: "Optimal" },
+    { span: "15 atoms", dist: "14.81 A", sasa: "539 A2", clash: "0.26 kcal", count: "0", strain: "5.98 kcal", alpha: "74.19", dg: "-21.80 kcal", feas: "Optimal" },
+    { span: "16 atoms", dist: "13.61 A", sasa: "539 A2", clash: "0.26 kcal", count: "0", strain: "10.77 kcal", alpha: "9.95", dg: "-20.61 kcal", feas: "Permissive" },
+    { span: "18 atoms", dist: "13.29 A", sasa: "528 A2", clash: "0.29 kcal", count: "0", strain: "19.68 kcal", alpha: "0.19", dg: "-18.26 kcal", feas: "High Strain Penalty" },
+    { span: "20 atoms", dist: "14.48 A", sasa: "410 A2", clash: "0.75 kcal", count: "0", strain: "4.08 kcal", alpha: "12.76", dg: "-20.76 kcal", feas: "Entropy Loss" },
+    { span: "22 atoms", dist: "14.06 A", sasa: "410 A2", clash: "0.75 kcal", count: "0", strain: "5.59 kcal", alpha: "6.75", dg: "-20.38 kcal", feas: "Entropy Loss" }
   ]
 };
 

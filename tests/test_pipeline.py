@@ -18,6 +18,7 @@ Tests all core modules:
 import os
 import sys
 import pytest
+import numpy as np
 import torch
 from rdkit import Chem
 
@@ -180,12 +181,68 @@ def test_invalid_smiles_robustness():
 
 
 def test_exact_lead_descriptor_consistency():
+    """
+    Rigorously validates that all candidates in verified_lead_candidates.csv:
+    1. Parse into chemically valid RDKit molecules.
+    2. Recalculated descriptors (MW, LogP, TPSA, SAScore, QED, PAINS, alerts) match CSV values.
+    3. Conformers in verified_lead_structures.sdf match candidate SMILES and possess valid 3D coordinates.
+    """
+    import csv
+    import pytest
+
     calc = ProtacPropertyCalculator()
-    lead_smi = "Cc1sc2nc(CC(=O)NCCCCCCCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
-    props = calc.compute_all_metrics(lead_smi)
-    assert props is not None
-    assert 700.0 <= props["mw"] <= 850.0
-    assert 2.0 <= props["logp"] <= 6.0
-    assert 150.0 <= props["tpsa"] <= 250.0
-    assert props["pains_flag"] is False
-    assert props["sascore"] <= 4.0
+    csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_candidates.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "lead_protac_candidates.csv")
+
+    assert os.path.exists(csv_path), f"Candidate CSV not found at {csv_path}"
+
+    candidates = []
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            candidates.append(row)
+
+    assert len(candidates) >= 5, f"Expected at least 5 prioritized leads, found {len(candidates)}"
+
+    for row in candidates:
+        cid = row["candidate_id"]
+        smi = row["smiles"]
+        mol = Chem.MolFromSmiles(smi)
+        assert mol is not None, f"Could not parse SMILES for candidate {cid}"
+
+        # Recalculate all physicochemical descriptors
+        recalculated = calc.compute_all_metrics(smi)
+        assert recalculated is not None
+
+        # Compare with CSV values using tight numerical tolerances
+        assert recalculated["mw"] == pytest.approx(float(row["mw"]), abs=0.1), f"MW mismatch on {cid}"
+        assert recalculated["logp"] == pytest.approx(float(row["logp"]), abs=0.05), f"LogP mismatch on {cid}"
+        assert recalculated["tpsa"] == pytest.approx(float(row["tpsa"]), abs=0.1), f"TPSA mismatch on {cid}"
+        assert recalculated["sascore"] == pytest.approx(float(row["sascore"]), abs=0.05), f"SAScore mismatch on {cid}"
+        assert recalculated["qed"] == pytest.approx(float(row["qed"]), abs=0.01), f"QED mismatch on {cid}"
+
+        csv_pains = row["pains_flag"].strip().lower() == "true"
+        csv_alert = row["alert_flag"].strip().lower() == "true"
+        assert recalculated["pains_flag"] == csv_pains, f"PAINS mismatch on {cid}"
+        assert recalculated["alert_flag"] == csv_alert, f"Alert flag mismatch on {cid}"
+
+    # Validate corresponding SDF structures
+    sdf_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_structures.sdf")
+    if os.path.exists(sdf_path):
+        suppl = Chem.SDMolSupplier(sdf_path)
+        assert len(suppl) >= 5, f"Expected at least 5 SDF structures, found {len(suppl)}"
+        for m in suppl:
+            assert m is not None, "Encountered None molecule in SDF"
+            assert m.GetNumConformers() >= 1, "SDF molecule lacks 3D conformer"
+            conf = m.GetConformer(0)
+            assert conf.Is3D(), "Conformer is not flagged as 3D"
+            pos = conf.GetPositions()
+            assert not np.all(pos == 0.0), "Conformer atom positions are all zero"
+
+            # Check constitutional isomorphism against candidate SMILES
+            smi_prop = m.GetProp("SMILES")
+            m_no_h = Chem.RemoveHs(m)
+            s_sdf = Chem.MolToSmiles(m_no_h, isomericSmiles=False, canonical=True)
+            s_ref = Chem.MolToSmiles(Chem.MolFromSmiles(smi_prop), isomericSmiles=False, canonical=True)
+            assert s_sdf == s_ref, f"SDF structure constitutional mismatch with SMILES property on {m.GetProp('_Name')}"

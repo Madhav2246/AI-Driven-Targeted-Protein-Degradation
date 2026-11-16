@@ -1,6 +1,6 @@
-compound_name,linker_architecture,linker_span_atoms,mw,logp,tpsa,rot_bonds,sascore,qed,cooperativity_alpha,deltaG_ternary_kcal,inter_protein_sasa_A2,clash_count,dc50_nm_reported_or_pred,dmax_pct_reported_or_pred
-dBET6 (Gold Standard),Octyl Alkyl Chain,10,729.26,5.67,167.53,13,2.63,0.117,1.27,-19.39,541.2,0,1.0,98.5
-ARV-825 (Clinical Candidate),Triethylene Glycol (PEG),11,733.2,3.36,185.99,13,2.63,0.136,0.01,-14.71,80.0,0,2.2,95.0
-dBET1 (First-Gen Degrader),Short Amide-Ester,5,646.08,3.29,164.73,7,2.57,0.174,0.01,-8.2,279.5,4,430.0,85.0
-PROTAC-AML-001 (AI Lead 1),"1,2,3-Triazole-PEG Hybrid",14,856.36,3.97,216.7,18,2.76,0.084,0.01,-16.3,80.0,0,< 1.0 (In Silico Pred),> 95.0 (In Silico Pred)
-PROTAC-AML-002 (AI Lead 2),Alkynyl-PEG Semi-Rigid,13,727.2,3.74,176.76,10,2.68,0.125,2.16,-19.71,362.5,0,< 2.0 (In Silico Pred),> 90.0 (In Silico Pred)
+compound_name,linker_architecture,linker_span_atoms,mw,logp,tpsa,rot_bonds,sascore,qed,cooperativity_alpha,deltaG_ternary_kcal,apparent_kd_nm,inter_protein_sasa_A2,clash_count,dc50_nm_reported_or_pred,dmax_pct_reported_or_pred
+dBET6 (Gold Standard),Octyl Alkyl Chain,10,729.26,5.67,167.53,13,2.63,0.117,0.01,-16.54,5000.0,366.0,2,1.0 nM (Nowak et al.),98.5%
+ARV-825 (Clinical Candidate),Triethylene Glycol (PEG),11,733.2,3.36,185.99,13,2.63,0.136,0.001,-11.4,50000.0,286.9,4,2.2 nM (Lu et al.),95.0%
+dBET1 (First-Gen Degrader),Short Amide-Ester,5,646.08,3.29,164.73,7,2.57,0.174,0.008,-16.37,6250.0,380.0,2,430.0 nM (Winter et al.),85.0%
+PROTAC-AML-021 (AI Lead 1),Alkynyl Rigid / Semi-Rigid,16,810.33,4.79,196.63,14,2.76,0.06,150.0,-23.26,0.33,547.8,0,In Silico Hypothesis (Gated),In Silico Hypothesis (Gated)
+PROTAC-AML-024 (AI Lead 2),Alkynyl Rigid / Semi-Rigid,16,806.3,4.01,196.63,12,2.8,0.071,6.841,-20.39,7.31,551.6,0,In Silico Hypothesis (Gated),In Silico Hypothesis (Gated)

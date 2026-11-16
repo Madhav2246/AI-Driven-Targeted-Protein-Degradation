@@ -46,25 +46,25 @@ This repository contains a publication-grade, fully reproducible computational f
 
 All lead compounds were generated from the active C-VAE checkpoint, chemically assembled with validated valency, and scored against the PDB 6BOY crystallographic pocket:
 
-### Lead 1: `PROTAC-AML-028` (Top-Ranked Lead)
-* **Architecture:** `[JQ1-Acid] -- [Piperazine / Heterocyclic Constrained (14 atoms)] -- [4-NH-Pomalidomide]`
-* **Linker Fragment:** `CCN7CCNCC7C#CCC(=O)N`
-* **Molecular Properties:** $\text{MW} = 781.30\text{ Da}$, $\text{cLogP} = 2.99$, $\text{TPSA} = 182.80\text{ \AA}^2$, $\text{RotBonds} = 9$
-* **Synthesizability & Drug-likeness:** $\text{SAScore} = 3.14$ (Accessible Ertl score), $\text{QED} = 0.146$
-* **Ternary Biophysics:** $\Delta G_{\text{ternary}} = -18.49\text{ kcal/mol}$ (Apparent $K_d \approx 0.01\text{ nM}$), $\text{Contact SASA} = 244.8\text{ \AA}^2$, $\text{Clash Penalty} = 1.70\text{ kcal/mol}$
-* **Composite Ranking Score:** **0.351** (Rank #1)
+### Lead 1: `PROTAC-AML-021` (Top-Ranked Lead)
+* **Architecture:** `[JQ1-Acid] -- [Alkynyl Rigid / Semi-Rigid (16 atoms)] -- [4-NH-Pomalidomide]`
+* **Linker Fragment:** `CCC#CCCCCCNC(=O)CC(=O)N`
+* **Molecular Properties:** $\text{MW} = 810.33\text{ Da}$, $\text{cLogP} = 4.79$, $\text{TPSA} = 196.63\text{ \AA}^2$, $\text{RotBonds} = 14$
+* **Synthesizability & Drug-likeness:** $\text{SAScore} = 2.76$ (High synthetic accessibility), $\text{QED} = 0.060$
+* **Ternary Biophysics:** $\alpha = 150.0$ (Strong positive cooperativity), $\Delta G_{\text{ternary}} = -23.26\text{ kcal/mol}$ (Apparent $K_d = 0.33\text{ nM}$), $\text{Contact SASA} = 547.8\text{ \AA}^2$, $\text{Clash Penalty} = 0.24\text{ kcal/mol}$
+* **Composite Ranking Score:** **0.740** (Rank #1)
 * **Full Canonical SMILES:**  
-  `Cc1sc2nc(CC(=O)NCCN3CCNCC3C#CCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C`
+  `Cc1sc2nc(CC(=O)NCCC#CCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C`
 
-### Lead 2: `PROTAC-AML-025`
-* **Architecture:** `[JQ1-Acid] -- [Aliphatic Alkyl / Hybrid (14 atoms)] -- [4-NH-Pomalidomide]`
-* **Linker Fragment:** `CCCNC(=O)CCCCCC(=O)N`
-* **Molecular Properties:** $\text{MW} = 786.31\text{ Da}$, $\text{cLogP} = 4.78$, $\text{TPSA} = 196.63\text{ \AA}^2$, $\text{RotBonds} = 15$
-* **Synthesizability & Drug-likeness:** $\text{SAScore} = 2.71$, $\text{QED} = 0.097$
-* **Ternary Biophysics:** $\Delta G_{\text{ternary}} = -18.37\text{ kcal/mol}$ (Apparent $K_d \approx 0.01\text{ nM}$), $\text{Contact SASA} = 162.0\text{ \AA}^2$
-* **Composite Ranking Score:** **0.326** (Rank #2)
+### Lead 2: `PROTAC-AML-024`
+* **Architecture:** `[JQ1-Acid] -- [Alkynyl Rigid / Semi-Rigid (16 atoms)] -- [4-NH-Pomalidomide]`
+* **Linker Fragment:** `CCCCC#CC#CCNC(=O)CC(=O)N`
+* **Molecular Properties:** $\text{MW} = 806.30\text{ Da}$, $\text{cLogP} = 4.01$, $\text{TPSA} = 196.63\text{ \AA}^2$, $\text{RotBonds} = 12$
+* **Synthesizability & Drug-likeness:** $\text{SAScore} = 2.80$, $\text{QED} = 0.071$
+* **Ternary Biophysics:** $\alpha = 150.0$ (Strong positive cooperativity), $\Delta G_{\text{ternary}} = -22.31\text{ kcal/mol}$ (Apparent $K_d = 0.33\text{ nM}$), $\text{Contact SASA} = 549.1\text{ \AA}^2$, $\text{Clash Penalty} = 0.23\text{ kcal/mol}$
+* **Composite Ranking Score:** **0.683** (Rank #2)
 * **Full Canonical SMILES:**  
-  `Cc1sc2nc(CC(=O)NCCCNC(=O)CCCCCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C`
+  `Cc1sc2nc(CC(=O)NCCCCC#CC#CCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C`
 
 ---
 

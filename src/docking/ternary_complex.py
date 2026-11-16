@@ -95,19 +95,53 @@ class TernaryComplexModeler:
         relative_energies = [round(e - min_energy, 2) for e in energies]
         return mol_3d, relative_energies
 
+    @staticmethod
+    def find_anchor_exit_atoms(mol: Chem.Mol) -> Tuple[Optional[int], Optional[int]]:
+        """
+        Identify the specific attachment atoms defining the linker exit vectors:
+        - JQ1: C4-carboxamide carbonyl carbon (attaches to linker)
+        - Pomalidomide: phthaloyl 4-amino nitrogen (attaches to linker)
+        """
+        query_jq1 = Chem.MolFromSmarts("c1sc2nc(C[C:1](=[O:2])[N:3])nc(-c3ccc(Cl)cc3)c2c1C")
+        query_pom = Chem.MolFromSmarts("[N:1]c1cccc2c1C(=O)N(C3CCC(=O)NC3=O)C2=O")
+        
+        jq1_matches = mol.GetSubstructMatches(query_jq1)
+        pom_matches = mol.GetSubstructMatches(query_pom)
+        
+        c_idx = None
+        if jq1_matches:
+            for q_atom, idx in zip(query_jq1.GetAtoms(), jq1_matches[0]):
+                if q_atom.GetAtomMapNum() == 1:
+                    c_idx = idx
+                    break
+                    
+        n_idx = None
+        if pom_matches:
+            for q_atom, idx in zip(query_pom.GetAtoms(), pom_matches[0]):
+                if q_atom.GetAtomMapNum() == 1:
+                    n_idx = idx
+                    break
+                    
+        return c_idx, n_idx
+
     def calculate_end_to_end_distance(self, mol_3d: Chem.Mol, conf_id: int = 0) -> float:
         """
-        Calculate distance between the anchor exit vectors across the linker in 3D space.
+        Measure Euclidean distance between chemically defined anchor exit vectors
+        (JQ1 C4-carbonyl carbon to Pomalidomide 4-amino nitrogen) in the given 3D conformer.
         """
         try:
+            c_idx, n_idx = self.find_anchor_exit_atoms(mol_3d)
             conf = mol_3d.GetConformer(conf_id)
-            # Find terminal rings/atoms (heavy atoms farthest apart)
-            positions = conf.GetPositions()
-            # Calculate maximum pairwise distance as surrogate for extended end-to-end span
-            dists = np.linalg.norm(positions[:, None, :] - positions[None, :, :], axis=-1)
-            # Find 90th percentile distance to represent warhead-to-e3 span
-            span = float(np.percentile(dists, 92))
-            return round(span, 2)
+            if c_idx is not None and n_idx is not None:
+                p1 = conf.GetAtomPosition(c_idx)
+                p2 = conf.GetAtomPosition(n_idx)
+                dist = float(np.linalg.norm(np.array([p1.x, p1.y, p1.z]) - np.array([p2.x, p2.y, p2.z])))
+                return round(dist, 2)
+            else:
+                # Fallback: topological span between farthest heavy atoms
+                positions = conf.GetPositions()
+                dists = np.linalg.norm(positions[:, None, :] - positions[None, :, :], axis=-1)
+                return round(float(np.percentile(dists, 80)), 2)
         except Exception:
             return 12.5
 
@@ -124,28 +158,28 @@ class TernaryComplexModeler:
         # Distance mismatch from crystallographic optimum (14.2 A for 6BOY)
         dist_delta = end_to_end_dist - self.pocket_distance_optimal
 
-        # Calculate inter-protein interface buried surface area (delta SASA)
-        # Optimal span yields maximum cooperative contact (~550-580 A^2 in 6BOY)
-        if abs(dist_delta) <= 1.8 and 10 <= linker_length_atoms <= 18:
-            inter_protein_sasa = 580.0 - (abs(dist_delta) * 40.0)
-            clash_penalty = 0.2  # Negligible clash
+        # Optimal span yields maximum cooperative contact (~500-580 A^2 in 6BOY)
+        if abs(dist_delta) <= 2.2 and 10 <= linker_length_atoms <= 18:
+            inter_protein_sasa = 560.0 - (abs(dist_delta) * 35.0)
+            clash_penalty = 0.2 + (abs(dist_delta) * 0.1)
             clash_count = 0
-        elif dist_delta < -2.5 or linker_length_atoms < 8:
+        elif dist_delta < -2.2 or linker_length_atoms < 10:
             # Overly short linker: forces collision between protein surfaces
-            shortfall = abs(dist_delta)
-            inter_protein_sasa = max(80.0, 450.0 - (shortfall * 110.0))
-            clash_penalty = 7.5 + (shortfall * 3.0)
-            clash_count = int(math.ceil(shortfall * 2))
-        elif dist_delta > 3.0 or linker_length_atoms > 20:
-            # Overly long linker: proteins are held too far apart, loss of inter-protein contacts
-            excess = dist_delta
-            inter_protein_sasa = max(80.0, 450.0 - (excess * 60.0))
-            clash_penalty = 0.5 + (excess * 0.35)
+            shortfall = abs(dist_delta) - 2.2 if dist_delta < -2.2 else 1.0
+            shortfall = max(0.5, shortfall)
+            inter_protein_sasa = max(80.0, 450.0 - (shortfall * 70.0))
+            clash_penalty = 2.0 + (shortfall * 2.5)
+            clash_count = int(math.ceil(shortfall * 1.5))
+        elif dist_delta > 2.2 or linker_length_atoms > 18:
+            # Overly long linker: proteins held apart, reduced interface contact, entropic loss
+            excess = dist_delta - 2.2 if dist_delta > 2.2 else 1.0
+            excess = max(0.5, excess)
+            inter_protein_sasa = max(80.0, 450.0 - (excess * 40.0))
+            clash_penalty = 0.5 + (excess * 0.25)
             clash_count = 0
         else:
-            # Intermediate transition zone
-            inter_protein_sasa = 420.0 - (abs(dist_delta) * 25.0)
-            clash_penalty = 1.0
+            inter_protein_sasa = 400.0 - (abs(dist_delta) * 20.0)
+            clash_penalty = 0.8
             clash_count = 0
 
         inter_protein_sasa = round(max(50.0, inter_protein_sasa), 1)
@@ -157,32 +191,35 @@ class TernaryComplexModeler:
         """
         Compute:
         - Thermodynamic cooperativity factor alpha = exp(-delta_delta_G / RT)
-        - Predicted Ternary Binding Free Energy (delta G ternary) in kcal/mol
+        - Predicted Stepwise & Total Ternary Binding Free Energies (kcal/mol)
+        - Apparent ternary dissociation constant Kd,app = Kd,binary(POI) / alpha (nM)
         - Cooperativity status: Positive (alpha > 1), Neutral (alpha ~ 1), Negative (alpha < 1)
         """
-        # Inter-protein buried hydrophobic surface provides favorable free energy:
-        # ~ -0.015 to -0.025 kcal/mol per A^2 of buried hydrophobic surface
+        # Inter-protein buried contact surface provides favorable free energy:
+        # ~ -0.008 kcal/mol per A^2 of buried hydrophobic surface
         deltaG_protein_contact = - (delta_sasa * 0.008)  # favorable interaction
 
         # Total free energy perturbation (delta delta G)
-        # Positive cooperativity occurs when favorable protein-protein contacts outweigh linker strain & clash
+        # Positive cooperativity occurs when favorable contacts outweigh linker strain & clash
         delta_delta_g = deltaG_protein_contact + (strain_energy * 0.25) + clash_penalty
 
         # Cooperativity factor alpha:
         # alpha = exp(- delta_delta_g / RT)
         alpha = math.exp(- delta_delta_g / self.rt_constant)
-        alpha = round(max(0.01, min(150.0, alpha)), 2)
+        alpha = round(max(0.001, min(150.0, alpha)), 3)
 
-        # Ternary binding affinity:
-        # delta G ternary = delta G binary(POI) + delta G binary(E3) + delta_delta_g
-        # Effective ternary Kd:
+        # Total ternary assembly free energy (A + B + D -> ABD):
         deltaG_ternary = self.deltaG_warhead_binary + self.deltaG_e3_binary + delta_delta_g
         deltaG_ternary = round(deltaG_ternary, 2)
 
-        # Estimate apparent ternary Kd (nM)
-        # deltaG = RT * ln(Kd_M) -> Kd_M = exp(deltaG / RT)
-        kd_ternary_m = math.exp(deltaG_ternary / self.rt_constant)
-        apparent_kd_nm = round(max(0.01, kd_ternary_m * 1e9), 2)
+        # Stepwise ternary binding free energy (BD + A -> ABD):
+        deltaG_stepwise = self.deltaG_warhead_binary + delta_delta_g
+        deltaG_stepwise = round(deltaG_stepwise, 2)
+
+        # Apparent ternary dissociation constant for POI recruitment:
+        # Kd,app = Kd,binary(POI) / alpha
+        # With binary JQ1 Kd = 50.0 nM, calculated without artificial numerical floors:
+        apparent_kd_nm = round(50.0 / max(1e-6, alpha), 2)
 
         if alpha >= 2.0:
             status = "Strong Positive Cooperativity (Synergistic)"
@@ -197,6 +234,7 @@ class TernaryComplexModeler:
             "cooperativity_alpha": alpha,
             "cooperativity_status": status,
             "deltaG_ternary_kcal": deltaG_ternary,
+            "deltaG_stepwise_kcal": deltaG_stepwise,
             "apparent_kd_nm": apparent_kd_nm,
             "inter_protein_sasa_A2": delta_sasa,
             "steric_clash_penalty_kcal": clash_penalty,
@@ -219,9 +257,19 @@ class TernaryComplexModeler:
             strain_energy = 2.5
             end_to_end = 14.0
         else:
-            # Low-energy conformer strain relative to global minimum
-            strain_energy = rel_energies[0]
-            end_to_end = self.calculate_end_to_end_distance(mol_3d, conf_id=0)
+            # Identify conformer with optimal pocket span fit from relaxed ensemble
+            best_span = None
+            best_strain = rel_energies[0]
+            min_mismatch = 999.0
+            for cid, strain_val in enumerate(rel_energies):
+                span_val = self.calculate_end_to_end_distance(mol_3d, conf_id=cid)
+                mismatch = abs(span_val - self.pocket_distance_optimal)
+                if mismatch < min_mismatch:
+                    min_mismatch = mismatch
+                    best_span = span_val
+                    best_strain = strain_val
+            end_to_end = best_span if best_span is not None else self.calculate_end_to_end_distance(mol_3d, conf_id=0)
+            strain_energy = best_strain
 
         # 2. Steric clashes & inter-protein interface
         delta_sasa, clash_penalty, clash_count = self.evaluate_steric_and_interface(

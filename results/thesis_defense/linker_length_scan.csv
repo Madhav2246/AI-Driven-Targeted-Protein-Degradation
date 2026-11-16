@@ -1,12 +1,12 @@
 linker_span_atoms,predicted_end_to_end_span_A,inter_protein_sasa_A2,steric_clash_penalty_kcal,clash_count,conformational_strain_kcal,cooperativity_alpha,deltaG_ternary_kcal,apparent_kd_nm,biological_feasibility
-6,17.18,122.2,16.44,6,3.5,0.01,-2.91,7392781.23,Steric Collision
-8,19.94,105.6,2.51,0,4.71,0.01,-16.41,0.01,Steric Collision
-10,19.16,152.4,2.24,0,1.54,0.09,-17.84,0.01,High Entropy Penalty
-12,19.58,127.2,2.38,0,6.75,0.01,-16.2,0.01,High Entropy Penalty
-13,19.33,142.2,2.3,0,5.45,0.01,-16.73,0.01,High Entropy Penalty
-14,19.7,120.0,2.42,0,4.43,0.01,-16.68,0.01,High Entropy Penalty
-15,24.16,80.0,3.99,0,3.27,0.01,-15.08,0.01,High Entropy Penalty
-16,19.89,108.6,2.49,0,0.0,0.06,-17.63,0.01,High Entropy Penalty
-18,22.83,80.0,3.52,0,9.32,0.01,-14.04,0.05,High Entropy Penalty
-20,25.15,80.0,4.33,0,0.33,0.01,-15.48,0.01,High Entropy Penalty
-22,22.83,80.0,3.52,0,5.2,0.01,-15.07,0.01,High Entropy Penalty
+6,6.92,94.4,14.7,8,10.47,0.001,-2.69,50000.0,Steric Collision (Severe)
+8,9.14,249.8,9.15,5,4.64,0.001,-10.94,50000.0,Steric Collision (Severe)
+10,11.01,380.7,4.47,2,0.0,0.091,-17.83,549.45,Transition Boundary
+12,12.08,485.8,0.41,0,1.75,150.0,-22.29,0.33,Optimal Design Window
+13,10.75,362.5,5.12,2,9.72,0.001,-14.6,50000.0,Steric Collision (Severe)
+14,12.33,494.6,0.39,0,6.69,24.396,-21.14,2.05,Optimal Design Window
+15,14.81,538.6,0.26,0,5.98,74.186,-21.8,0.67,Optimal Design Window
+16,13.61,539.4,0.26,0,10.77,9.954,-20.61,5.02,Permissive Window
+18,13.29,528.1,0.29,0,19.68,0.19,-18.26,263.16,High Strain Penalty
+20,14.48,410.0,0.75,0,4.08,12.761,-20.76,3.92,High Rotational Entropy Loss
+22,14.06,410.0,0.75,0,5.59,6.752,-20.38,7.41,High Rotational Entropy Loss
