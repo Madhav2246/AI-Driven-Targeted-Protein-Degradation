@@ -23,6 +23,14 @@
     "bro5_compliance_pct": 100.0,
     "pains_cleared_count": 38,
     "pains_cleared_pct": 100.0,
+    "structural_alerts_cleared_count": 38,
+    "structural_alerts_cleared_pct": 100.0,
+    "sascore_eligible_count": 38,
+    "sascore_eligible_pct": 100.0,
+    "all_property_filters_passed_count": 38,
+    "all_property_filters_passed_pct": 100.0,
+    "positive_cooperativity_count": 5,
+    "positive_cooperativity_pct": 13.2,
     "productive_leads_count": 5,
     "productive_leads_pct": 13.2,
     "top_leads_count": 5,
@@ -49,13 +57,13 @@
         "count": 12,
         "pct": 31.6
       },
-      "Piperazine / Heterocyclic Constrained": {
-        "count": 5,
-        "pct": 13.2
-      },
       "PEG (Polyethylene Glycol) Flexible": {
         "count": 14,
         "pct": 36.8
+      },
+      "Piperazine / Heterocyclic Constrained": {
+        "count": 5,
+        "pct": 13.2
       },
       "1,2,3-Triazole Rigid Linker": {
         "count": 2,

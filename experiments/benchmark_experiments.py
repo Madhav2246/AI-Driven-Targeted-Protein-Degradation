@@ -128,6 +128,7 @@ def run_experiment_a_ablation(
     logger.info(f"Executing Experiment A: Generative Model Architecture Ablation (N={sample_size} per model)...")
 
     # Load canonical representations of training linkers for rigorous novelty check
+    train_csv = os.path.join(PROJECT_ROOT, "data", "train_linkers.csv")
     known_canonical_linkers = set()
     for lk_file in ["train_linkers.csv", "cvae_training_linkers.csv"]:
         p = os.path.join(PROJECT_ROOT, "data", lk_file)
