@@ -1,0 +1,48 @@
+{
+  "total_candidates_sampled": 40,
+  "chemically_valid_count": 38,
+  "chemical_validity_pct": 95.0,
+  "bro5_compliant_count": 38,
+  "bro5_compliance_pct": 100.0,
+  "pains_cleared_count": 38,
+  "pains_cleared_pct": 100.0,
+  "productive_leads_count": 5,
+  "productive_leads_pct": 13.2,
+  "top_leads_count": 5,
+  "funnel_stages": [
+    "Sampled\n(N=40)",
+    "RDKit Valid\n(N=38)",
+    "bRo5 Compliant\n(N=38)",
+    "PAINS-Cleared\n(N=38)",
+    "Prioritized Leads\n(N=5)"
+  ],
+  "funnel_counts": [
+    40,
+    38,
+    38,
+    38,
+    5
+  ],
+  "scaffold_distribution": {
+    "Aliphatic Alkyl / Hybrid": {
+      "count": 5,
+      "pct": 13.2
+    },
+    "Alkynyl Rigid / Semi-Rigid": {
+      "count": 12,
+      "pct": 31.6
+    },
+    "Piperazine / Heterocyclic Constrained": {
+      "count": 5,
+      "pct": 13.2
+    },
+    "PEG (Polyethylene Glycol) Flexible": {
+      "count": 14,
+      "pct": 36.8
+    },
+    "1,2,3-Triazole Rigid Linker": {
+      "count": 2,
+      "pct": 5.3
+    }
+  }
+}

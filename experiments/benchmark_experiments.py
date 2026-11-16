@@ -252,35 +252,39 @@ def run_experiment_a_ablation(
         record = {
             "model_variant": name,
             "samples_generated": sample_size,
+            "valid_molecules_count": valid_count,
             "chemical_validity_pct": val_pct,
+            "unique_molecules_count": len(unique_smiles),
             "uniqueness_pct": uniq_pct,
+            "novel_molecules_count": novel_count,
             "novelty_pct": nov_pct,
+            "bro5_compliant_count": bro5_pass_count,
             "bro5_compliance_pct": bro5_pct,
+            "pains_pass_count": pains_pass_count,
             "pains_pass_pct": pains_pct,
             "mean_sascore": mean_sa,
             "mean_qed": mean_q,
             "mean_cooperativity_alpha": mean_a,
+            "productive_leads_count": productive_leads,
             "productive_leads_fraction_pct": prod_pct
         }
         results.append(record)
-        logger.info(f"  [{name}] Validity: {val_pct}%, Novelty: {nov_pct}%, SAScore: {mean_sa}, Productive: {prod_pct}%")
+        logger.info(f"  [{name}] Validity: {val_pct}% ({valid_count}/{sample_size}), Uniqueness: {uniq_pct}% ({len(unique_smiles)}/{valid_count}), Novelty: {nov_pct}%, SAScore: {mean_sa}, Productive: {prod_pct}% ({productive_leads}/{valid_count})")
 
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        fieldnames = list(results[0].keys())
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
-
-    # Synchronize to thesis_defense folder as well
+    # Export to primary, thesis_defense, and final_validated folders
+    final_dir = os.path.join(PROJECT_ROOT, "results", "final_validated")
     defense_dir = os.path.join(PROJECT_ROOT, "results", "thesis_defense")
+    os.makedirs(final_dir, exist_ok=True)
     os.makedirs(defense_dir, exist_ok=True)
-    defense_ablation = os.path.join(defense_dir, "ablation_results.csv")
-    with open(defense_ablation, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
 
-    logger.info(f"Experiment A completed. Written to {output_path} and {defense_ablation}")
+    fieldnames = list(results[0].keys())
+    for target in [output_path, os.path.join(defense_dir, "ablation_results.csv"), os.path.join(final_dir, "ablation_results.csv")]:
+        with open(target, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(results)
+
+    logger.info(f"Experiment A completed. Synchronized across experiments, thesis_defense, and final_validated.")
     return results
 
 
@@ -322,73 +326,80 @@ def run_experiment_b_length_scan(output_csv: str = "experiments/linker_length_sc
         if mol is None:
             continue
 
-        mol_3d, energies = dock_modeler.generate_3d_conformers(mol, num_conformers=6, max_iters=150)
+        mol_3d, energies = dock_modeler.generate_3d_conformers(mol, num_conformers=8, max_iters=250)
+        fallback = False
         if mol_3d is not None and energies:
-            # Identify conformer with optimal pocket span fit
-            best_span = None
-            best_strain = 0.0
-            min_mismatch = 999.0
-            for cid, strain_val in enumerate(energies):
-                span_val = dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=cid)
-                mismatch = abs(span_val - dock_modeler.pocket_distance_optimal)
-                if mismatch < min_mismatch:
-                    min_mismatch = mismatch
-                    best_span = span_val
-                    best_strain = strain_val
+            # Unbiased lowest-energy conformer represents the baseline relaxed state
+            min_cid = energies.index(0.0) if 0.0 in energies else 0
+            min_energy_span = dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=min_cid)
+            all_spans = [dock_modeler.calculate_end_to_end_distance(mol_3d, conf_id=cid) for cid in range(len(energies))]
+            mean_span = round(float(np.mean(all_spans)), 2)
+            min_span = round(float(np.min(all_spans)), 2)
+            max_span = round(float(np.max(all_spans)), 2)
+            conf_count = len(energies)
         else:
-            best_span = round(6.5 + (l_span * 0.58), 2)
-            best_strain = 2.0
+            min_energy_span = round(6.5 + (l_span * 0.58), 2)
+            mean_span = min_energy_span
+            min_span = min_energy_span
+            max_span = min_energy_span
+            conf_count = 0
+            fallback = True
+
+        target_span = dock_modeler.pocket_distance_optimal  # 14.2 Angstroms
+        pocket_mismatch = round(abs(min_energy_span - target_span), 2)
 
         delta_sasa, clash_penalty, clash_count = dock_modeler.evaluate_steric_and_interface(
-            linker_length_atoms=l_span, end_to_end_dist=best_span
+            linker_length_atoms=l_span, end_to_end_dist=min_energy_span
         )
 
         thermo = dock_modeler.compute_cooperativity_and_affinity(
-            strain_energy=best_strain, delta_sasa=delta_sasa, clash_penalty=clash_penalty
+            strain_energy=0.0, delta_sasa=delta_sasa, clash_penalty=clash_penalty
         )
 
         # Classification based on biophysical landscape
-        if 12 <= l_span <= 15 and clash_penalty <= 0.5 and thermo["cooperativity_alpha"] >= 1.0:
-            feasibility = "Optimal Design Window"
-        elif l_span < 10 or clash_penalty >= 5.0:
+        if clash_penalty >= 5.0 or l_span < 10:
             feasibility = "Steric Collision (Severe)"
-        elif l_span == 10 or (clash_penalty >= 2.0 and clash_penalty < 5.0):
+        elif 2.0 <= clash_penalty < 5.0 or (l_span == 10 and pocket_mismatch > 3.0):
             feasibility = "Transition Boundary"
-        elif 16 <= l_span <= 17 and clash_penalty <= 0.5:
+        elif thermo["cooperativity_alpha"] >= 1.0 and clash_penalty <= 0.5:
+            feasibility = "Optimal Design Window"
+        elif 0.8 <= thermo["cooperativity_alpha"] < 1.0 and clash_penalty <= 0.5:
             feasibility = "Permissive Window"
-        elif l_span >= 18 and thermo["strain_energy_kcal"] > 12.0:
-            feasibility = "High Strain Penalty"
         else:
             feasibility = "High Rotational Entropy Loss"
 
         scan_results.append({
             "linker_span_atoms": l_span,
-            "predicted_end_to_end_span_A": best_span,
-            "inter_protein_sasa_A2": delta_sasa,
-            "steric_clash_penalty_kcal": clash_penalty,
-            "clash_count": clash_count,
-            "conformational_strain_kcal": round(best_strain, 2),
-            "cooperativity_alpha": thermo["cooperativity_alpha"],
-            "deltaG_ternary_kcal": thermo["deltaG_ternary_kcal"],
-            "apparent_kd_nm": thermo["apparent_kd_nm"],
+            "min_energy_conformer_span_A": min_energy_span,
+            "mean_conformer_span_A": mean_span,
+            "min_conformer_span_A": min_span,
+            "max_conformer_span_A": max_span,
+            "target_crystallographic_span_A": target_span,
+            "target_pocket_mismatch_A": pocket_mismatch,
+            "conformer_count": conf_count,
+            "empirical_interface_sasa_A2": delta_sasa,
+            "heuristic_steric_penalty_kcal": clash_penalty,
+            "heuristic_clash_count": clash_count,
+            "estimated_cooperativity_alpha": thermo["cooperativity_alpha"],
+            "estimated_deltaG_ternary_kcal": thermo["deltaG_ternary_kcal"],
+            "estimated_apparent_kd_nm": thermo["apparent_kd_nm"],
+            "conformer_generation_fallback": fallback,
             "biological_feasibility": feasibility
         })
 
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        fieldnames = list(scan_results[0].keys())
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(scan_results)
-
+    final_dir = os.path.join(PROJECT_ROOT, "results", "final_validated")
     defense_dir = os.path.join(PROJECT_ROOT, "results", "thesis_defense")
+    os.makedirs(final_dir, exist_ok=True)
     os.makedirs(defense_dir, exist_ok=True)
-    defense_scan = os.path.join(defense_dir, "linker_length_scan.csv")
-    with open(defense_scan, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(scan_results)
 
-    logger.info(f"Experiment B completed. Conformer trajectory written to {output_path} and {defense_scan}")
+    fieldnames = list(scan_results[0].keys())
+    for target in [output_path, os.path.join(defense_dir, "linker_length_scan.csv"), os.path.join(final_dir, "linker_length_scan.csv")]:
+        with open(target, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(scan_results)
+
+    logger.info(f"Experiment B completed. Conformer trajectory synchronized across experiments, thesis_defense, and final_validated.")
     return scan_results
 
 
@@ -409,6 +420,7 @@ def run_experiment_c_literature_benchmark(output_csv: str = "experiments/literat
     calc = ProtacPropertyCalculator()
     dock_modeler = TernaryComplexModeler(pdb_template="6BOY")
 
+    # Literature standard reference compounds
     compounds = [
         {
             "name": "dBET6 (Gold Standard)",
@@ -433,24 +445,60 @@ def run_experiment_c_literature_benchmark(output_csv: str = "experiments/literat
             "linker_len": 5,
             "published_dc50_nm": "430.0 nM (Winter et al.)",
             "published_dmax": "85.0%"
-        },
-        {
-            "name": "PROTAC-AML-021 (AI Lead 1)",
-            "smiles": "Cc1sc2nc(CC(=O)NCCC#CCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C",
-            "linker_type": "Alkynyl Rigid / Semi-Rigid",
-            "linker_len": 16,
-            "published_dc50_nm": "In Silico Hypothesis (Gated)",
-            "published_dmax": "In Silico Hypothesis (Gated)"
-        },
-        {
-            "name": "PROTAC-AML-024 (AI Lead 2)",
-            "smiles": "Cc1sc2nc(CC(=O)NCCCCC#CC#CCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C",
-            "linker_type": "Alkynyl Rigid / Semi-Rigid",
-            "linker_len": 16,
-            "published_dc50_nm": "In Silico Hypothesis (Gated)",
-            "published_dmax": "In Silico Hypothesis (Gated)"
         }
     ]
+
+    # Dynamic loading of top 2 AI leads from verified candidate outputs
+    lead_source = os.path.join(PROJECT_ROOT, "results", "final_validated", "verified_lead_candidates.csv")
+    if not os.path.exists(lead_source):
+        lead_source = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_candidates.csv")
+    if not os.path.exists(lead_source):
+        lead_source = os.path.join(PROJECT_ROOT, "lead_protac_candidates.csv")
+
+    ai_leads = []
+    if os.path.exists(lead_source):
+        with open(lead_source, "r", encoding="utf-8") as f:
+            reader = list(csv.DictReader(f))
+            if len(reader) >= 1:
+                ai_leads.append({
+                    "name": f"{reader[0]['candidate_id']} (Top AI Lead #1)",
+                    "smiles": reader[0]["smiles"],
+                    "linker_type": reader[0].get("scaffold_type", "Alkynyl Semi-Rigid"),
+                    "linker_len": int(reader[0].get("linker_length_atoms", 16)),
+                    "published_dc50_nm": "In Silico Hypothesis (Gated)",
+                    "published_dmax": "In Silico Hypothesis (Gated)"
+                })
+            if len(reader) >= 2:
+                ai_leads.append({
+                    "name": f"{reader[1]['candidate_id']} (AI Lead #2)",
+                    "smiles": reader[1]["smiles"],
+                    "linker_type": reader[1].get("scaffold_type", "Alkynyl Semi-Rigid"),
+                    "linker_len": int(reader[1].get("linker_length_atoms", 16)),
+                    "published_dc50_nm": "In Silico Hypothesis (Gated)",
+                    "published_dmax": "In Silico Hypothesis (Gated)"
+                })
+
+    if not ai_leads:
+        ai_leads = [
+            {
+                "name": "PROTAC-AML-012 (AI Lead 1)",
+                "smiles": "Cc1sc2nc(CC(=O)NCCCCCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C",
+                "linker_type": "Aliphatic Alkyl / Hybrid",
+                "linker_len": 16,
+                "published_dc50_nm": "In Silico Hypothesis (Gated)",
+                "published_dmax": "In Silico Hypothesis (Gated)"
+            },
+            {
+                "name": "PROTAC-AML-010 (AI Lead 2)",
+                "smiles": "Cc1sc2nc(CC(=O)NCCC#CCCCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C",
+                "linker_type": "Alkynyl Rigid / Semi-Rigid",
+                "linker_len": 16,
+                "published_dc50_nm": "In Silico Hypothesis (Gated)",
+                "published_dmax": "In Silico Hypothesis (Gated)"
+            }
+        ]
+
+    compounds.extend(ai_leads)
 
     benchmarks = []
     for c in compounds:
@@ -476,13 +524,19 @@ def run_experiment_c_literature_benchmark(output_csv: str = "experiments/literat
             "dmax_pct_reported_or_pred": c["published_dmax"]
         })
 
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        fieldnames = list(benchmarks[0].keys())
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(benchmarks)
+    final_dir = os.path.join(PROJECT_ROOT, "results", "final_validated")
+    defense_dir = os.path.join(PROJECT_ROOT, "results", "thesis_defense")
+    os.makedirs(final_dir, exist_ok=True)
+    os.makedirs(defense_dir, exist_ok=True)
 
-    logger.info(f"Experiment C completed. Literature benchmark written to {output_path}")
+    fieldnames = list(benchmarks[0].keys())
+    for target in [output_path, os.path.join(defense_dir, "literature_benchmark_comparison.csv"), os.path.join(final_dir, "literature_benchmark_comparison.csv")]:
+        with open(target, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(benchmarks)
+
+    logger.info(f"Experiment C completed. Literature benchmark synchronized across experiments, thesis_defense, and final_validated.")
     return benchmarks
 
 

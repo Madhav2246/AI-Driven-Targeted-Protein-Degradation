@@ -51,7 +51,10 @@ class TernaryComplexModeler:
         # Pomalidomide binding to CRBN: Kd ~ 150 nM -> deltaG ~ -9.30 kcal/mol
         self.deltaG_warhead_binary = -9.95  # kcal/mol
         self.deltaG_e3_binary = -9.30       # kcal/mol
-        self.rt_constant = 0.593            # kcal/mol at 298.15 K
+        self.rt_constant = 0.5925           # kcal/mol at 298.15 K
+        # Thermodynamic rigid-body entropy penalty for tethering two independent proteins
+        # into a defined ternary interface (Finkelstein & Janin, Protein Sci 1993; Page & Jencks 1971)
+        self.rigid_body_entropy = 3.60      # kcal/mol
 
     def generate_3d_conformers(self, mol: Chem.Mol, num_conformers: int = 6, max_iters: int = 250) -> Tuple[Optional[Chem.Mol], List[float]]:
         """
@@ -190,23 +193,25 @@ class TernaryComplexModeler:
                                            clash_penalty: float) -> Dict[str, Any]:
         """
         Compute:
-        - Thermodynamic cooperativity factor alpha = exp(-delta_delta_G / RT)
+        - Thermodynamic cooperativity factor alpha = exp(-delta_delta_G / RT) without artificial caps.
         - Predicted Stepwise & Total Ternary Binding Free Energies (kcal/mol)
         - Apparent ternary dissociation constant Kd,app = Kd,binary(POI) / alpha (nM)
-        - Cooperativity status: Positive (alpha > 1), Neutral (alpha ~ 1), Negative (alpha < 1)
+        - Cooperativity status: Positive (alpha > 1.05), Neutral (0.95 <= alpha <= 1.05), Negative (alpha < 0.95)
         """
         # Inter-protein buried contact surface provides favorable free energy:
         # ~ -0.008 kcal/mol per A^2 of buried hydrophobic surface
         deltaG_protein_contact = - (delta_sasa * 0.008)  # favorable interaction
 
         # Total free energy perturbation (delta delta G)
-        # Positive cooperativity occurs when favorable contacts outweigh linker strain & clash
-        delta_delta_g = deltaG_protein_contact + (strain_energy * 0.25) + clash_penalty
+        # Includes rigid-body tethering entropy penalty, favorable contact, conformer strain & steric clash
+        delta_delta_g = self.rigid_body_entropy + deltaG_protein_contact + (strain_energy * 0.25) + clash_penalty
 
         # Cooperativity factor alpha:
         # alpha = exp(- delta_delta_g / RT)
-        alpha = math.exp(- delta_delta_g / self.rt_constant)
-        alpha = round(max(0.001, min(150.0, alpha)), 3)
+        # Mathematical safeguard: prevent floating point overflow/underflow without arbitrary caps
+        exp_arg = - delta_delta_g / self.rt_constant
+        exp_arg_safe = max(-50.0, min(50.0, exp_arg))
+        alpha = round(math.exp(exp_arg_safe), 4)
 
         # Total ternary assembly free energy (A + B + D -> ABD):
         deltaG_ternary = self.deltaG_warhead_binary + self.deltaG_e3_binary + delta_delta_g
@@ -218,23 +223,22 @@ class TernaryComplexModeler:
 
         # Apparent ternary dissociation constant for POI recruitment:
         # Kd,app = Kd,binary(POI) / alpha
-        # With binary JQ1 Kd = 50.0 nM, calculated without artificial numerical floors:
-        apparent_kd_nm = round(50.0 / max(1e-6, alpha), 2)
+        # Binary JQ1 Kd = 50.0 nM; calculated continuously without artificial numerical floors or ceilings
+        apparent_kd_nm = round(50.0 / max(1e-9, alpha), 2)
 
-        if alpha >= 2.0:
-            status = "Strong Positive Cooperativity (Synergistic)"
-        elif alpha >= 1.1:
-            status = "Moderate Positive Cooperativity"
-        elif alpha >= 0.8:
+        if alpha >= 1.05:
+            status = "Positive Cooperativity (Synergistic)"
+        elif alpha >= 0.95:
             status = "Neutral Cooperativity"
         else:
-            status = "Negative Cooperativity (Steric Hindrance / Hook Risk)"
+            status = "Negative Cooperativity (Antagonistic / Steric Clash)"
 
         return {
             "cooperativity_alpha": alpha,
             "cooperativity_status": status,
             "deltaG_ternary_kcal": deltaG_ternary,
             "deltaG_stepwise_kcal": deltaG_stepwise,
+            "delta_delta_g_kcal": round(delta_delta_g, 3),
             "apparent_kd_nm": apparent_kd_nm,
             "inter_protein_sasa_A2": delta_sasa,
             "steric_clash_penalty_kcal": clash_penalty,
@@ -242,7 +246,11 @@ class TernaryComplexModeler:
         }
 
     def evaluate_protac_ternary_fit(self, smiles: str, linker_length_atoms: int, fast_eval: bool = False) -> Optional[Dict[str, Any]]:
-        """Complete in silico ternary docking and biophysical scoring workflow."""
+        """
+        In silico ternary conformation and biophysical scoring workflow.
+        Evaluates the lowest-energy conformer as the unbiased baseline state,
+        while recording the full conformational distance ensemble.
+        """
         if not smiles or not smiles.strip():
             return None
         mol = Chem.MolFromSmiles(smiles)
@@ -250,28 +258,28 @@ class TernaryComplexModeler:
             return None
 
         # 1. 3D Conformer Generation & Forcefield relaxation
-        n_confs = 2 if fast_eval else 6
+        n_confs = 3 if fast_eval else 8
         max_it = 80 if fast_eval else 250
         mol_3d, rel_energies = self.generate_3d_conformers(mol, num_conformers=n_confs, max_iters=max_it)
         if not rel_energies:
             strain_energy = 2.5
             end_to_end = 14.0
+            mean_span = 14.0
+            min_span = 14.0
+            max_span = 14.0
+            conf_count = 0
         else:
-            # Identify conformer with optimal pocket span fit from relaxed ensemble
-            best_span = None
-            best_strain = rel_energies[0]
-            min_mismatch = 999.0
-            for cid, strain_val in enumerate(rel_energies):
-                span_val = self.calculate_end_to_end_distance(mol_3d, conf_id=cid)
-                mismatch = abs(span_val - self.pocket_distance_optimal)
-                if mismatch < min_mismatch:
-                    min_mismatch = mismatch
-                    best_span = span_val
-                    best_strain = strain_val
-            end_to_end = best_span if best_span is not None else self.calculate_end_to_end_distance(mol_3d, conf_id=0)
-            strain_energy = best_strain
+            # The lowest-energy conformer (relative energy 0.0) represents the unbiased baseline conformation
+            min_cid = rel_energies.index(0.0) if 0.0 in rel_energies else 0
+            end_to_end = self.calculate_end_to_end_distance(mol_3d, conf_id=min_cid)
+            all_spans = [self.calculate_end_to_end_distance(mol_3d, conf_id=cid) for cid in range(len(rel_energies))]
+            mean_span = round(float(np.mean(all_spans)), 2)
+            min_span = round(float(np.min(all_spans)), 2)
+            max_span = round(float(np.max(all_spans)), 2)
+            strain_energy = 0.0
+            conf_count = len(rel_energies)
 
-        # 2. Steric clashes & inter-protein interface
+        # 2. Steric clashes & inter-protein interface compatibility
         delta_sasa, clash_penalty, clash_count = self.evaluate_steric_and_interface(
             linker_length_atoms=linker_length_atoms, end_to_end_dist=end_to_end
         )
@@ -284,6 +292,12 @@ class TernaryComplexModeler:
         return {
             "smiles": smiles,
             "end_to_end_distance_A": end_to_end,
+            "mean_conformer_distance_A": mean_span,
+            "min_conformer_distance_A": min_span,
+            "max_conformer_distance_A": max_span,
+            "target_distance_A": self.pocket_distance_optimal,
+            "distance_mismatch_A": round(abs(end_to_end - self.pocket_distance_optimal), 2),
+            "conformer_count": conf_count,
             "linker_span_atoms": linker_length_atoms,
             "strain_energy_kcal": strain_energy,
             "inter_protein_sasa_A2": delta_sasa,
@@ -292,6 +306,7 @@ class TernaryComplexModeler:
             "cooperativity_alpha": thermo["cooperativity_alpha"],
             "cooperativity_status": thermo["cooperativity_status"],
             "deltaG_ternary_kcal": thermo["deltaG_ternary_kcal"],
+            "delta_delta_g_kcal": thermo["delta_delta_g_kcal"],
             "apparent_kd_nm": thermo["apparent_kd_nm"],
         }
 

@@ -246,20 +246,24 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
     print("="*115)
     print(format_table(headers, rows, widths))
 
-    # Save to primary and defense CSVs
+    # Save to primary, defense, and final_validated CSVs
     export_fields = [
         "candidate_id", "integrated_rank_score", "scaffold_type", "linker_length_atoms",
         "mw", "logp", "tpsa", "rot_bonds", "hbd", "hba", "sascore", "qed",
         "cooperativity_alpha", "cooperativity_status", "deltaG_ternary_kcal",
         "apparent_kd_nm", "inter_protein_sasa_A2", "steric_clash_penalty_kcal",
-        "pains_flag", "alert_flag", "linker_fragment", "smiles"
+        "pains_flag", "alert_flag", "passed_all_filters", "linker_fragment", "smiles"
     ]
 
     thesis_dir = os.path.join(PROJECT_ROOT, "results", "thesis_defense")
+    final_dir = os.path.join(PROJECT_ROOT, "results", "final_validated")
     os.makedirs(thesis_dir, exist_ok=True)
-    defense_csv = os.path.join(thesis_dir, "verified_lead_candidates.csv")
+    os.makedirs(final_dir, exist_ok=True)
 
-    for target_path in [output_csv, defense_csv]:
+    defense_csv = os.path.join(thesis_dir, "verified_lead_candidates.csv")
+    final_csv = os.path.join(final_dir, "verified_lead_candidates.csv")
+
+    for target_path in [output_csv, defense_csv, final_csv]:
         with open(target_path, mode="w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=export_fields)
             writer.writeheader()
@@ -267,12 +271,25 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
                 row_data = {k: c.get(k, "") for k in export_fields}
                 writer.writerow(row_data)
 
+    # Export full evaluated candidate pool for complete traceability
+    pool_fields = export_fields
+    for target_pool in [os.path.join(thesis_dir, "all_generated_candidates.csv"), os.path.join(final_dir, "all_generated_candidates.csv")]:
+        with open(target_pool, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=pool_fields)
+            writer.writeheader()
+            for c in ternary_evaluated:
+                row_data = {k: c.get(k, "") for k in pool_fields}
+                writer.writerow(row_data)
+
     print(f"\n[OUTPUT] Successfully exported top {len(top_candidates)} lead candidates to: {os.path.abspath(output_csv)}")
     print(f"[OUTPUT] Successfully exported thesis defense CSV to: {os.path.abspath(defense_csv)}")
+    print(f"[OUTPUT] Successfully exported final validated CSV to: {os.path.abspath(final_csv)}")
 
     # Export 3D Structures (SDF)
     defense_sdf = os.path.join(thesis_dir, "verified_lead_structures.sdf")
+    final_sdf = os.path.join(final_dir, "verified_lead_structures.sdf")
     export_leads_to_sdf(top_candidates, defense_sdf)
+    export_leads_to_sdf(top_candidates, final_sdf)
 
     # Sync web app 3D models
     web_models_dir = os.path.join(PROJECT_ROOT, "web_app", "models_3d")
@@ -296,18 +313,67 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
     }
     export_leads_to_sdf([dbet6_entry], os.path.join(web_models_dir, "dbet6_reference.sdf"))
 
-    # Copy / Sync experiment outputs into thesis_defense directory
+    # Compute exact execution metrics and funnel counts dynamically from the data
+    scaffold_counts = {}
+    for c in ternary_evaluated:
+        st = c.get("scaffold_type", "Unknown")
+        scaffold_counts[st] = scaffold_counts.get(st, 0) + 1
+
+    total_valid = len(ternary_evaluated)
+    scaffold_distribution = {
+        k: {
+            "count": v,
+            "pct": round((v / total_valid) * 100.0, 1)
+        }
+        for k, v in scaffold_counts.items()
+    }
+
+    n_sampled = num_candidates_to_generate
+    n_valid = total_valid
+    n_bro5 = sum(1 for c in ternary_evaluated if c.get("passed_all_filters", False))
+    n_pains = sum(1 for c in ternary_evaluated if not c.get("pains_flag", True))
+    n_leads = len(top_candidates)
+
+    exec_metrics = {
+        "total_candidates_sampled": n_sampled,
+        "chemically_valid_count": n_valid,
+        "chemical_validity_pct": round((n_valid / max(1, n_sampled)) * 100.0, 1),
+        "bro5_compliant_count": n_bro5,
+        "bro5_compliance_pct": round((n_bro5 / max(1, n_valid)) * 100.0, 1),
+        "pains_cleared_count": n_pains,
+        "pains_cleared_pct": round((n_pains / max(1, n_valid)) * 100.0, 1),
+        "productive_leads_count": len(productive_leads),
+        "productive_leads_pct": prod_fraction_pct,
+        "top_leads_count": n_leads,
+        "funnel_stages": [
+            f"Sampled\n(N={n_sampled})",
+            f"RDKit Valid\n(N={n_valid})",
+            f"bRo5 Compliant\n(N={n_bro5})",
+            f"PAINS-Cleared\n(N={n_pains})",
+            f"Prioritized Leads\n(N={n_leads})"
+        ],
+        "funnel_counts": [n_sampled, n_valid, n_bro5, n_pains, n_leads],
+        "scaffold_distribution": scaffold_distribution
+    }
+
+    for target_json in [os.path.join(thesis_dir, "pipeline_execution_metrics.json"), os.path.join(final_dir, "pipeline_execution_metrics.json")]:
+        with open(target_json, "w", encoding="utf-8") as f:
+            json.dump(exec_metrics, f, indent=2)
+
+    # Copy / Sync experiment outputs into thesis_defense and final_validated directories
     exp_files = [
         ("logs/training_history.csv", "training_history.csv"),
         ("experiments/ablation_study_results.csv", "ablation_results.csv"),
         ("experiments/linker_length_scan_results.csv", "linker_length_scan.csv"),
+        ("experiments/literature_benchmark_comparison.csv", "literature_benchmark_comparison.csv"),
         ("scratch/test_results.txt", "test_results.txt"),
     ]
     for src, dst in exp_files:
         src_path = os.path.join(PROJECT_ROOT, src)
-        dst_path = os.path.join(thesis_dir, dst)
-        if os.path.exists(src_path):
-            shutil.copy2(src_path, dst_path)
+        for d in [thesis_dir, final_dir]:
+            dst_path = os.path.join(d, dst)
+            if os.path.exists(src_path):
+                shutil.copy2(src_path, dst_path)
 
     # Export structured evaluation summary JSON
     summary_data = {
@@ -324,6 +390,7 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
             "val_loss": pipeline.checkpoint_metadata.get("val_loss", 1.8342),
             "status": "Verified & Active"
         },
+        "execution_metrics": exec_metrics,
         "top_leads": [
             {
                 "rank": idx,
@@ -344,8 +411,9 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
             for idx, c in enumerate(top_candidates, 1)
         ]
     }
-    with open(os.path.join(thesis_dir, "evaluation_summary.json"), "w", encoding="utf-8") as f:
-        json.dump(summary_data, f, indent=2)
+    for d in [thesis_dir, final_dir]:
+        with open(os.path.join(d, "evaluation_summary.json"), "w", encoding="utf-8") as f:
+            json.dump(summary_data, f, indent=2)
 
     metadata = {
         "framework": "PyTorch 2.15.0 + RDKit 2026.09.1",
@@ -354,8 +422,9 @@ def run_pipeline(output_csv: str = "lead_protac_candidates.csv", num_candidates_
         "seed": 42,
         "date_executed": "November 2026"
     }
-    with open(os.path.join(thesis_dir, "experiment_metadata.json"), "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
+    for d in [thesis_dir, final_dir]:
+        with open(os.path.join(d, "experiment_metadata.json"), "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
     
     # Run empirical benchmark experiments
     print("\n[STEP 6/6] Executing Empirical Ablation Studies & Literature Benchmarks...")

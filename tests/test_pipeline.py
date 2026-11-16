@@ -191,7 +191,9 @@ def test_exact_lead_descriptor_consistency():
     import pytest
 
     calc = ProtacPropertyCalculator()
-    csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_candidates.csv")
+    csv_path = os.path.join(PROJECT_ROOT, "results", "final_validated", "verified_lead_candidates.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_candidates.csv")
     if not os.path.exists(csv_path):
         csv_path = os.path.join(PROJECT_ROOT, "lead_protac_candidates.csv")
 
@@ -228,7 +230,10 @@ def test_exact_lead_descriptor_consistency():
         assert recalculated["alert_flag"] == csv_alert, f"Alert flag mismatch on {cid}"
 
     # Validate corresponding SDF structures
-    sdf_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_structures.sdf")
+    sdf_path = os.path.join(PROJECT_ROOT, "results", "final_validated", "verified_lead_structures.sdf")
+    if not os.path.exists(sdf_path):
+        sdf_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_structures.sdf")
+
     if os.path.exists(sdf_path):
         suppl = Chem.SDMolSupplier(sdf_path)
         assert len(suppl) >= 5, f"Expected at least 5 SDF structures, found {len(suppl)}"
@@ -246,3 +251,85 @@ def test_exact_lead_descriptor_consistency():
             s_sdf = Chem.MolToSmiles(m_no_h, isomericSmiles=False, canonical=True)
             s_ref = Chem.MolToSmiles(Chem.MolFromSmiles(smi_prop), isomericSmiles=False, canonical=True)
             assert s_sdf == s_ref, f"SDF structure constitutional mismatch with SMILES property on {m.GetProp('_Name')}"
+
+
+def test_unclipped_cooperativity_and_apparent_kd():
+    """
+    Verifies that:
+    1. Cooperativity alpha is not artificially clamped at 150.0.
+    2. Apparent Kd is continuously derived as Kd_app = 50.0 / alpha (nM).
+    3. Apparent Kd values across top candidates are not identical flat artificial floors.
+    """
+    import csv
+    import pytest
+
+    csv_path = os.path.join(PROJECT_ROOT, "results", "final_validated", "verified_lead_candidates.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "verified_lead_candidates.csv")
+
+    assert os.path.exists(csv_path), f"File not found: {csv_path}"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = list(csv.DictReader(f))
+
+    alphas = [float(r["cooperativity_alpha"]) for r in reader]
+    kds = [float(r["apparent_kd_nm"]) for r in reader]
+
+    for a, kd in zip(alphas, kds):
+        assert a != 150.0, "Cooperativity alpha still shows artificial 150.0 clipping!"
+        assert a > 0.0, "Cooperativity alpha must be positive"
+        expected_kd = 50.0 / a
+        assert kd == pytest.approx(expected_kd, rel=1e-2), f"Kd {kd} does not match 50.0 / alpha ({expected_kd})"
+
+    # Verify candidates do not share identical flat Kd floors
+    assert len(set(round(k, 3) for k in kds)) > 1, "Apparent Kd values are artificially identical across leads!"
+
+
+def test_ablation_metrics_structure():
+    """
+    Verifies that ablation results contain sample counts and distinct baseline performance metrics.
+    """
+    import csv
+
+    csv_path = os.path.join(PROJECT_ROOT, "results", "final_validated", "ablation_results.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "ablation_results.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "experiments", "ablation_study_results.csv")
+
+    assert os.path.exists(csv_path), f"File not found: {csv_path}"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    assert len(rows) == 3, f"Expected 3 ablation models, found {len(rows)}"
+    expected_cols = [
+        "model_variant", "samples_generated", "valid_molecules_count",
+        "chemical_validity_pct", "unique_molecules_count", "uniqueness_pct",
+        "novel_molecules_count", "novelty_pct", "bro5_compliant_count",
+        "bro5_compliance_pct", "pains_pass_count", "pains_pass_pct",
+        "mean_sascore", "mean_qed", "mean_cooperativity_alpha",
+        "productive_leads_count", "productive_leads_fraction_pct"
+    ]
+    for col in expected_cols:
+        assert col in rows[0], f"Missing expected column {col} in ablation study"
+
+
+def test_linker_length_scan_metrics():
+    """
+    Verifies that linker length scan outputs conformer ensemble spans and target mismatch.
+    """
+    import csv
+
+    csv_path = os.path.join(PROJECT_ROOT, "results", "final_validated", "linker_length_scan.csv")
+    if not os.path.exists(csv_path):
+        csv_path = os.path.join(PROJECT_ROOT, "results", "thesis_defense", "linker_length_scan.csv")
+
+    assert os.path.exists(csv_path), f"File not found: {csv_path}"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    assert len(rows) >= 8, f"Expected at least 8 length entries, found {len(rows)}"
+    for r in rows:
+        assert "mean_conformer_span_A" in r
+        assert "target_crystallographic_span_A" in r
+        assert float(r["target_crystallographic_span_A"]) == 14.2
+        assert "target_pocket_mismatch_A" in r

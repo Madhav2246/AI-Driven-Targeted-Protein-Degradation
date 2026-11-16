@@ -1,0 +1,148 @@
+{
+  "project": "AI-Driven Targeted Protein Degradation (TPD) Pipeline for AML Targets",
+  "authors": [
+    "Madhav Yalamarthi",
+    "Hareesh"
+  ],
+  "target": "BRD4 (BD1/BD2)",
+  "e3_ligase": "Cereblon (CRBN)",
+  "pdb_reference": "6BOY",
+  "comparator_pdb": "5T35",
+  "model_architecture": "Dual-Anchor Conditional VAE (C-VAE)",
+  "checkpoint": {
+    "path": "checkpoints/cvae_linker_model.pt",
+    "epoch": 11,
+    "val_loss": 1.8342,
+    "status": "Verified & Active"
+  },
+  "execution_metrics": {
+    "total_candidates_sampled": 40,
+    "chemically_valid_count": 38,
+    "chemical_validity_pct": 95.0,
+    "bro5_compliant_count": 38,
+    "bro5_compliance_pct": 100.0,
+    "pains_cleared_count": 38,
+    "pains_cleared_pct": 100.0,
+    "productive_leads_count": 5,
+    "productive_leads_pct": 13.2,
+    "top_leads_count": 5,
+    "funnel_stages": [
+      "Sampled\n(N=40)",
+      "RDKit Valid\n(N=38)",
+      "bRo5 Compliant\n(N=38)",
+      "PAINS-Cleared\n(N=38)",
+      "Prioritized Leads\n(N=5)"
+    ],
+    "funnel_counts": [
+      40,
+      38,
+      38,
+      38,
+      5
+    ],
+    "scaffold_distribution": {
+      "Aliphatic Alkyl / Hybrid": {
+        "count": 5,
+        "pct": 13.2
+      },
+      "Alkynyl Rigid / Semi-Rigid": {
+        "count": 12,
+        "pct": 31.6
+      },
+      "Piperazine / Heterocyclic Constrained": {
+        "count": 5,
+        "pct": 13.2
+      },
+      "PEG (Polyethylene Glycol) Flexible": {
+        "count": 14,
+        "pct": 36.8
+      },
+      "1,2,3-Triazole Rigid Linker": {
+        "count": 2,
+        "pct": 5.3
+      }
+    }
+  },
+  "top_leads": [
+    {
+      "rank": 1,
+      "id": "PROTAC-AML-012",
+      "scaffold": "Aliphatic Alkyl / Hybrid",
+      "linker_length": 16,
+      "mw": 814.36,
+      "logp": 5.56,
+      "tpsa": 196.63,
+      "sascore": 2.71,
+      "qed": 0.06,
+      "cooperativity_alpha": 2.9832,
+      "deltaG_ternary_kcal": -19.9,
+      "apparent_kd_nm": 16.76,
+      "integrated_rank_score": 0.617,
+      "smiles": "Cc1sc2nc(CC(=O)NCCCCCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 2,
+      "id": "PROTAC-AML-010",
+      "scaffold": "Alkynyl Rigid / Semi-Rigid",
+      "linker_length": 16,
+      "mw": 813.33,
+      "logp": 4.92,
+      "tpsa": 185.99,
+      "sascore": 2.74,
+      "qed": 0.08,
+      "cooperativity_alpha": 1.7596,
+      "deltaG_ternary_kcal": -19.58,
+      "apparent_kd_nm": 28.42,
+      "integrated_rank_score": 0.609,
+      "smiles": "Cc1sc2nc(CC(=O)NCCC#CCCCCOCCOCC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 3,
+      "id": "PROTAC-AML-021",
+      "scaffold": "Alkynyl Rigid / Semi-Rigid",
+      "linker_length": 16,
+      "mw": 810.33,
+      "logp": 4.79,
+      "tpsa": 196.63,
+      "sascore": 2.76,
+      "qed": 0.06,
+      "cooperativity_alpha": 1.6503,
+      "deltaG_ternary_kcal": -19.55,
+      "apparent_kd_nm": 30.3,
+      "integrated_rank_score": 0.591,
+      "smiles": "Cc1sc2nc(CC(=O)NCCC#CCCCCCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 4,
+      "id": "PROTAC-AML-024",
+      "scaffold": "Alkynyl Rigid / Semi-Rigid",
+      "linker_length": 16,
+      "mw": 806.3,
+      "logp": 4.01,
+      "tpsa": 196.63,
+      "sascore": 2.8,
+      "qed": 0.071,
+      "cooperativity_alpha": 1.2105,
+      "deltaG_ternary_kcal": -19.36,
+      "apparent_kd_nm": 41.31,
+      "integrated_rank_score": 0.585,
+      "smiles": "Cc1sc2nc(CC(=O)NCCCCC#CC#CCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    },
+    {
+      "rank": 5,
+      "id": "PROTAC-AML-006",
+      "scaffold": "Alkynyl Rigid / Semi-Rigid",
+      "linker_length": 17,
+      "mw": 828.3,
+      "logp": 3.22,
+      "tpsa": 215.09,
+      "sascore": 2.76,
+      "qed": 0.059,
+      "cooperativity_alpha": 1.1399,
+      "deltaG_ternary_kcal": -19.33,
+      "apparent_kd_nm": 43.86,
+      "integrated_rank_score": 0.574,
+      "smiles": "Cc1sc2nc(CC(=O)NCCCOCCOC#CCNC(=O)CC(=O)Nc3cccc4c3C(=O)N(C3CCC(=O)NC3=O)C4=O)nc(-c3ccc(Cl)cc3)c2c1C"
+    }
+  ]
+}
